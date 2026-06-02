@@ -28,7 +28,10 @@
       },
       "permissions": [
         "NOTIFICATIONS",
-        "RECEIVE_BOOT_COMPLETED"
+        "RECEIVE_BOOT_COMPLETED",
+        "CAMERA",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
       ]
     },
     "web": {
@@ -46,7 +49,14 @@
           "color": "#0E6B68"
         }
       ],
-      "expo-splash-screen"
+      "expo-splash-screen",
+      "expo-local-authentication",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "O SirvaOS precisa da câmera para funções de check-in e foto de perfil."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
