@@ -45,40 +45,40 @@ Cada etapa tem um escopo fechado e critérios de conclusão. **Não avançar par
 
 ---
 
-## Etapa 2 — Autenticação Completa
+## Etapa 2 — Autenticação Completa ✅ CONCLUÍDA
 
 **Objetivo:** Membro consegue fazer login, primeiro acesso e recuperar senha. A sessão persiste entre abertura e fechamento do app.
 
 ### Entregas
-- [ ] Tela de login com e-mail, senha, botões e logo SirvaOS
-- [ ] Validação de campos com feedback de erro
-- [ ] Integração com `supabase.auth.signInWithPassword`
-- [ ] Redirecionamento correto pós-login (home para membros)
-- [ ] Fluxo de primeiro acesso — 3 steps:
+- [x] Tela de login com e-mail, senha, botões e logo SirvaOS
+- [x] Validação de campos com feedback de erro
+- [x] Integração com `supabase.auth.signInWithPassword`
+- [x] Redirecionamento correto pós-login (home para membros)
+- [x] Fluxo de primeiro acesso — 3 steps:
   - Step 1: informar e-mail
   - Step 2: confirmar data de nascimento (quando exigida)
   - Step 3: definir senha
   - Integração com Edge Function `first-access` (já deployada)
-- [ ] Tela de recuperação de senha (e-mail → link via Resend)
-- [ ] Logout funcional
-- [ ] Sessão persistida com SecureStore (app fecha e reabre logado)
-- [ ] Tratamento de erros com mensagens amigáveis (lista no SPEC seção 12)
-- [ ] Proteção de rotas: sem sessão → login; com sessão → home
-- [ ] Login com digital quando o celular do usuario permitir
-- [ ] fluxo para usar a camera do usuario para futuros modulos do sistema
+- [x] Tela de recuperação de senha (e-mail → link via Resend)
+- [x] Logout funcional
+- [x] Sessão persistida com SecureStore (app fecha e reabre logado)
+- [x] Tratamento de erros com mensagens amigáveis (lista no SPEC seção 12)
+- [x] Proteção de rotas: sem sessão → login; com sessão → home
+- [x] Login com digital quando o celular do usuario permitir
+- [x] fluxo para usar a camera do usuario para futuros modulos do sistema
 
 ### Critérios de conclusão
-- Membro real (cadastrado no banco) consegue fazer primeiro acesso pelo app
-- Membro consegue fazer login e logout
-- App reabre já logado sem pedir senha novamente
-- Erros de credencial exibem mensagem adequada (não "error" bruto)
+- [x] Membro real (cadastrado no banco) consegue fazer primeiro acesso pelo app
+- [x] Membro consegue fazer login e logout
+- [x] App reabre já logado sem pedir senha novamente
+- [x] Erros de credencial exibem mensagem adequada (não "error" bruto)
 
 ---
 
 ## Etapa 3 — Home e Dashboard do Membro
 
 **Objetivo:** Após login, membro vê sua home personalizada com próximos eventos, seus ministérios e comunicados recentes.
-
+Tambem todos os modulos que ele tem acesso com admin
 ### Dependências
 - Etapa 2 concluída
 - Tabelas `profiles`, `members`, `tenant_modules`, `platform_modules` populadas no banco
@@ -395,8 +395,8 @@ Implementar os dois: se `requiredCode > currentCode` → force; se apenas `recom
 
 ```
 [1] Fundação                    ✅ CONCLUÍDA
-[2] Autenticação                ← PRÓXIMA (login, 1º acesso, biometria, câmera)
-[3] Home / Dashboard
+[2] Autenticação                ✅ CONCLUÍDA
+[3] Home / Dashboard            ← PRÓXIMA
 [4] Perfil
 [5] Notificações Push
 [6] Módulo Louvor               ← Primeiro módulo operacional completo
