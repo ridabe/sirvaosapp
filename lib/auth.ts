@@ -43,28 +43,27 @@ async function extractFunctionError(error: unknown): Promise<Error> {
 }
 
 // Chama a Edge Function first-access (mesma usada pelo portal web)
-export async function firstAccessStart(email: string, birthDate?: string) {
+export async function firstAccessStart(email: string, dateOfBirth?: string) {
   const body: Record<string, string> = { action: 'start', email: email.toLowerCase().trim() }
-  if (birthDate) body.birth_date = birthDate
+  if (dateOfBirth) body.dateOfBirth = dateOfBirth  // Edge Function espera camelCase
   const { data, error } = await supabase.functions.invoke('first-access', { body })
   if (error) throw await extractFunctionError(error)
-  return data as { requiresBirthDate: boolean; token?: string }
+  // Edge Function retorna activationToken (não token)
+  return data as { ok: boolean; requiresBirthDate?: boolean; activationToken?: string; alreadyActive?: boolean; memberName?: string }
 }
 
 export async function firstAccessComplete(params: {
   email: string
-  token: string
+  token: string  // activationToken recebido do start
   password: string
-  birthDate?: string
 }) {
-  const body: Record<string, string> = {
+  const body = {
     action: 'complete',
     email: params.email.toLowerCase().trim(),
     token: params.token,
     password: params.password,
   }
-  if (params.birthDate) body.birth_date = params.birthDate
   const { data, error } = await supabase.functions.invoke('first-access', { body })
   if (error) throw await extractFunctionError(error)
-  return data
+  return data as { ok: boolean; code: string; message: string }
 }

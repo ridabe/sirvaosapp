@@ -35,8 +35,13 @@ export default function PrimeiroAcessoScreen() {
     const result = await start(email)
     if (!result) return
 
-    setRequiresBirthDate(result.requiresBirthDate)
-    if (result.token) setToken(result.token)
+    if (result.alreadyActive) {
+      setFieldError('Este acesso já foi ativado. Use a opção Entrar ou recupere sua senha.')
+      return
+    }
+
+    setRequiresBirthDate(!!result.requiresBirthDate)
+    if (result.activationToken) setToken(result.activationToken)
 
     setStep(result.requiresBirthDate ? 'birthdate' : 'password')
   }
@@ -46,11 +51,11 @@ export default function PrimeiroAcessoScreen() {
     const clean = birthDate.replace(/\D/g, '')
     if (clean.length !== 8) { setFieldError('Informe a data no formato DD/MM/AAAA.'); return }
 
-    // Passa a data em ISO para o start validar e retornar o token
+    // Passa a data em ISO para o start validar e retornar o activationToken
     const birthDateISO = birthDate.split('/').reverse().join('-')
     const result = await start(email, birthDateISO)
     if (!result) return
-    if (result.token) setToken(result.token)
+    if (result.activationToken) setToken(result.activationToken)
     setStep('password')
   }
 
@@ -64,13 +69,11 @@ export default function PrimeiroAcessoScreen() {
   async function handlePasswordStep() {
     setFieldError('')
     if (password.length < 8) { setFieldError('A senha deve ter pelo menos 8 caracteres.'); return }
+    if (!/[A-Z]/.test(password)) { setFieldError('A senha precisa ter pelo menos uma letra maiúscula.'); return }
+    if (!/[0-9]/.test(password)) { setFieldError('A senha precisa ter pelo menos um número.'); return }
     if (password !== confirmPassword) { setFieldError('As senhas não coincidem.'); return }
 
-    const birthDateISO = requiresBirthDate
-      ? birthDate.split('/').reverse().join('-')
-      : undefined
-
-    const result = await complete(email, token, password, birthDateISO)
+    const result = await complete(email, token, password)
     if (!result) return
 
     // Login automático após ativação
@@ -172,6 +175,8 @@ export default function PrimeiroAcessoScreen() {
               </Text>
               <View style={styles.passwordRules}>
                 <Text style={common.smallText}>• Mínimo de 8 caracteres</Text>
+                <Text style={common.smallText}>• Pelo menos uma letra maiúscula (A-Z)</Text>
+                <Text style={common.smallText}>• Pelo menos um número (0-9)</Text>
               </View>
               <Input
                 label="Nova senha"

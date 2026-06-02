@@ -84,11 +84,11 @@ export function useFirstAccess() {
     }
   }
 
-  async function complete(email: string, token: string, password: string, birthDate?: string) {
+  async function complete(email: string, token: string, password: string) {
     setLoading(true)
     setError(null)
     try {
-      return await firstAccessComplete({ email, token, password, birthDate })
+      return await firstAccessComplete({ email, token, password })
     } catch (e) {
       setError(parseError(e))
       return null
