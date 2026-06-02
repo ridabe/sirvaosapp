@@ -75,7 +75,7 @@ Cada etapa tem um escopo fechado e critérios de conclusão. **Não avançar par
 
 ---
 
-## Etapa 3 — Home e Dashboard do Membro
+## Etapa 3 — Home e Dashboard do Membro ✅ CONCLUÍDA
 
 **Objetivo:** Após login, membro vê sua home personalizada com próximos eventos, seus ministérios e comunicados recentes.
 Tambem todos os modulos que ele tem acesso com admin
@@ -84,46 +84,48 @@ Tambem todos os modulos que ele tem acesso com admin
 - Tabelas `profiles`, `members`, `tenant_modules`, `platform_modules` populadas no banco
 
 ### Entregas
-- [ ] Header com saudação personalizada ("Olá, [nome]") e foto de perfil
-- [ ] Seção "Próximos eventos" — lista horizontal com cards de eventos dos ministérios do membro
-- [ ] Seção "Meus ministérios" — cards dos módulos em que o membro participa (dinâmico, vindo do banco)
-- [ ] Cards de admin de módulo — visíveis apenas para membros com papel em `tenant_module_admins`
-- [ ] Seção "Comunicados recentes" — últimos 3 comunicados do tenant e dos módulos do membro
-- [ ] Estado de carregamento (skeleton/loading) para cada seção
-- [ ] Estado vazio com mensagem quando não há dados
-- [ ] Estado offline com mensagem clara
-- [ ] Hook `useMember` para buscar dados do perfil e membro autenticado
-- [ ] Hook `useModules` para buscar módulos ativos do membro
+- [x] Header com saudação personalizada ("Olá, [nome]") e foto de perfil
+- [x] Seção "Próximos eventos" — lista horizontal com cards de eventos dos ministérios do membro
+- [x] Seção "Meus ministérios" — cards dos módulos em que o membro participa (dinâmico, vindo do banco)
+- [x] Cards de admin de módulo — visíveis apenas para membros com papel em `tenant_module_admins`
+- [x] Seção "Comunicados recentes" — últimos 3 comunicados do tenant e dos módulos do membro
+- [x] Estado de carregamento (skeleton/loading) para cada seção
+- [x] Estado vazio com mensagem quando não há dados
+- [x] Estado offline com mensagem clara
+- [x] Hook `useMember` para buscar dados do perfil e membro autenticado
+- [x] Hook `useModules` para buscar módulos ativos do membro
 
 ### Critérios de conclusão
-- Home carrega e exibe dados reais do membro logado
-- Módulos exibidos correspondem ao tenant do membro
-- Scroll fluido sem travamentos
+- [x] Home carrega e exibe dados reais do membro logado
+- [x] Módulos exibidos correspondem ao tenant do membro
+- [x] Scroll fluido sem travamentos
 
 ---
 
-## Etapa 4 — Tela de Perfil do Membro
+## Etapa 4 — Tela de Perfil do Membro ✅ CONCLUÍDA
 
 **Objetivo:** Membro acessa e edita seus dados pessoais básicos; visualiza seus ministérios e dados de membresia.
+Lembrando que os usuarios so terao acesso aos modulos basicos do sistema e aos modulos que estao classificados como admin daquele modulo, caso contrario nao par ser mostrado nem no menu
 
 ### Dependências
 - Etapa 3 concluída
 
 ### Entregas
-- [ ] Foto de perfil com opção de troca (câmera/galeria → upload para Supabase Storage)
-- [ ] Nome completo, e-mail, telefone
-- [ ] Data de ingresso e status de membresia
-- [ ] Lista de ministérios vinculados
-- [ ] Edição de nome, telefone e foto
-- [ ] Botão de logout
-- [ ] Link para política de privacidade
-- [ ] Opção "Exportar meus dados" (via Edge Function ou e-mail)
-- [ ] Opção "Solicitar exclusão de conta"
+- [x] Foto de perfil com opção de troca (câmera/galeria → upload para Supabase Storage)
+- [x] Nome completo, e-mail, telefone
+- [x] Data de ingresso e status de membresia
+- [x] Lista de ministérios vinculados
+- [x] Edição de nome, telefone e foto
+- [x] Botão de logout
+- [x] Link para política de privacidade
+- [x] Opção "Exportar meus dados" (via Edge Function ou e-mail)
+- [x] Opção "Solicitar exclusão de conta"
+- [x] DrawerMenu dinâmico — só exibe módulos para admins do módulo
 
 ### Critérios de conclusão
-- Membro visualiza seus dados reais
-- Alteração de foto persiste no Storage e reflete na home
-- Logout redireciona para login
+- [x] Membro visualiza seus dados reais
+- [x] Alteração de foto persiste no Storage e reflete na home
+- [x] Logout redireciona para login
 
 ---
 
@@ -396,7 +398,7 @@ Implementar os dois: se `requiredCode > currentCode` → force; se apenas `recom
 ```
 [1] Fundação                    ✅ CONCLUÍDA
 [2] Autenticação                ✅ CONCLUÍDA
-[3] Home / Dashboard            ← PRÓXIMA
+[3] Home / Dashboard            ✅ CONCLUÍDA
 [4] Perfil
 [5] Notificações Push
 [6] Módulo Louvor               ← Primeiro módulo operacional completo

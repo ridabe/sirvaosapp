@@ -1,19 +1,28 @@
 import { useState } from 'react'
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, Animated, LayoutAnimation, Platform, UIManager,
+  ScrollView, LayoutAnimation, Platform, UIManager,
 } from 'react-native'
+import { Image } from 'expo-image'
 import { useRouter, usePathname } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useMember } from '@/hooks/useMember'
+import { useModules } from '@/hooks/useModules'
 import { useSignOut } from '@/hooks/useAuth'
 import { colors } from '@/constants/colors'
 import { spacing, fontSize, radius } from '@/lib/theme'
 
-// Habilita LayoutAnimation no Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true)
+}
+
+const MODULE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  louvor: 'musical-notes-outline',
+  financeiro: 'wallet-outline',
+  kids: 'happy-outline',
+  'escola-biblica': 'book-outline',
+  'acao-social': 'heart-outline',
 }
 
 type NavItem = {
@@ -22,44 +31,15 @@ type NavItem = {
   icon: keyof typeof Ionicons.glyphMap
 }
 
-type Section = {
-  title: string
-  icon: keyof typeof Ionicons.glyphMap
-  items: NavItem[]
-  accordion?: boolean
+const STATIC_SECTIONS = {
+  principal: [
+    { label: 'Início', route: '/(app)/', icon: 'home-outline' as keyof typeof Ionicons.glyphMap },
+    { label: 'Notificações', route: '/(app)/notificacoes', icon: 'notifications-outline' as keyof typeof Ionicons.glyphMap },
+  ],
+  conta: [
+    { label: 'Meu Perfil', route: '/(app)/perfil', icon: 'person-outline' as keyof typeof Ionicons.glyphMap },
+  ],
 }
-
-const SECTIONS: Section[] = [
-  {
-    title: 'Principal',
-    icon: 'home-outline',
-    accordion: false,
-    items: [
-      { label: 'Início', route: '/(app)/', icon: 'home-outline' },
-      { label: 'Notificações', route: '/(app)/notificacoes', icon: 'notifications-outline' },
-    ],
-  },
-  {
-    title: 'Ministérios',
-    icon: 'grid-outline',
-    accordion: true,
-    items: [
-      { label: 'Louvor', route: '/(app)/modulos/louvor', icon: 'musical-notes-outline' },
-      { label: 'Financeiro', route: '/(app)/modulos/financeiro', icon: 'wallet-outline' },
-      { label: 'Kids', route: '/(app)/modulos/kids', icon: 'happy-outline' },
-      { label: 'Escola Bíblica', route: '/(app)/modulos/escola-biblica', icon: 'book-outline' },
-      { label: 'Ação Social', route: '/(app)/modulos/acao-social', icon: 'heart-outline' },
-    ],
-  },
-  {
-    title: 'Minha conta',
-    icon: 'person-outline',
-    accordion: false,
-    items: [
-      { label: 'Meu Perfil', route: '/(app)/perfil', icon: 'person-outline' },
-    ],
-  },
-]
 
 type Props = {
   onClose: () => void
@@ -70,7 +50,16 @@ export function DrawerMenu({ onClose }: Props) {
   const pathname = usePathname()
   const insets = useSafeAreaInsets()
   const { profile, firstName } = useMember()
+  const { modules } = useModules(profile?.tenant_id)
   const { execute: signOut, loading: signingOut } = useSignOut()
+
+  const adminModules: NavItem[] = modules
+    .filter(m => m.isAdmin)
+    .map(m => ({
+      label: m.name,
+      route: `/(app)/modulos/${m.slug}`,
+      icon: MODULE_ICONS[m.slug] ?? 'apps-outline',
+    }))
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     Ministérios: true,
@@ -100,11 +89,15 @@ export function DrawerMenu({ onClose }: Props) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header do usuário */}
       <View style={styles.userHeader}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {firstName?.[0]?.toUpperCase() ?? '?'}
-          </Text>
-        </View>
+        {profile?.avatar_url ? (
+          <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} contentFit="cover" />
+        ) : (
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {firstName?.[0]?.toUpperCase() ?? '?'}
+            </Text>
+          </View>
+        )}
         <View style={styles.userInfo}>
           <Text style={styles.userName} numberOfLines={1}>
             {profile?.full_name ?? 'Carregando...'}
@@ -125,38 +118,30 @@ export function DrawerMenu({ onClose }: Props) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {SECTIONS.map(section => (
-          <View key={section.title} style={styles.section}>
-            {/* Título da seção — clicável se for accordion */}
-            {section.accordion ? (
-              <TouchableOpacity
-                style={styles.sectionHeader}
-                onPress={() => toggleSection(section.title)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.sectionHeaderLeft}>
-                  <Ionicons name={section.icon} size={18} color={colors.neutral[500]} />
-                  <Text style={styles.sectionTitle}>{section.title}</Text>
-                </View>
-                <Ionicons
-                  name={openSections[section.title] ? 'chevron-up' : 'chevron-down'}
-                  size={16}
-                  color={colors.neutral[500]}
-                />
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeaderLeft}>
-                  <Ionicons name={section.icon} size={18} color={colors.neutral[500]} />
-                  <Text style={styles.sectionTitle}>{section.title}</Text>
-                </View>
-              </View>
-            )}
+        {/* Principal */}
+        <NavSection title="Principal" icon="home-outline" items={STATIC_SECTIONS.principal} isActive={isActive} onNavigate={navigate} />
 
-            {/* Itens — ocultos se accordion fechado */}
-            {(!section.accordion || openSections[section.title]) && (
+        {/* Ministérios — somente para admins de módulo */}
+        {adminModules.length > 0 && (
+          <View style={styles.section}>
+            <TouchableOpacity
+              style={styles.sectionHeader}
+              onPress={() => toggleSection('Ministérios')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.sectionHeaderLeft}>
+                <Ionicons name="grid-outline" size={18} color={colors.neutral[500]} />
+                <Text style={styles.sectionTitle}>Ministérios</Text>
+              </View>
+              <Ionicons
+                name={openSections['Ministérios'] ? 'chevron-up' : 'chevron-down'}
+                size={16}
+                color={colors.neutral[500]}
+              />
+            </TouchableOpacity>
+            {openSections['Ministérios'] && (
               <View style={styles.items}>
-                {section.items.map(item => {
+                {adminModules.map(item => {
                   const active = isActive(item.route)
                   return (
                     <TouchableOpacity
@@ -165,21 +150,18 @@ export function DrawerMenu({ onClose }: Props) {
                       onPress={() => navigate(item.route)}
                       activeOpacity={0.7}
                     >
-                      <Ionicons
-                        name={item.icon}
-                        size={20}
-                        color={active ? colors.brand.primary : colors.neutral[600]}
-                      />
-                      <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>
-                        {item.label}
-                      </Text>
+                      <Ionicons name={item.icon} size={20} color={active ? colors.brand.primary : colors.neutral[500]} />
+                      <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>{item.label}</Text>
                     </TouchableOpacity>
                   )
                 })}
               </View>
             )}
           </View>
-        ))}
+        )}
+
+        {/* Minha conta */}
+        <NavSection title="Minha conta" icon="person-outline" items={STATIC_SECTIONS.conta} isActive={isActive} onNavigate={navigate} />
       </ScrollView>
 
       {/* Rodapé — Sair */}
@@ -213,6 +195,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
     gap: spacing.md,
+  },
+  avatarImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
   avatar: {
     width: 48,
@@ -314,3 +301,40 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 })
+
+function NavSection({
+  title, icon, items, isActive, onNavigate,
+}: {
+  title: string
+  icon: keyof typeof Ionicons.glyphMap
+  items: NavItem[]
+  isActive: (route: string) => boolean
+  onNavigate: (route: string) => void
+}) {
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionHeaderLeft}>
+          <Ionicons name={icon} size={18} color={colors.neutral[500]} />
+          <Text style={styles.sectionTitle}>{title}</Text>
+        </View>
+      </View>
+      <View style={styles.items}>
+        {items.map(item => {
+          const active = isActive(item.route)
+          return (
+            <TouchableOpacity
+              key={item.route}
+              style={[styles.item, active && styles.itemActive]}
+              onPress={() => onNavigate(item.route)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name={item.icon} size={20} color={active ? colors.brand.primary : colors.neutral[500]} />
+              <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>{item.label}</Text>
+            </TouchableOpacity>
+          )
+        })}
+      </View>
+    </View>
+  )
+}
