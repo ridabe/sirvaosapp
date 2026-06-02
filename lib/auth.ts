@@ -27,12 +27,27 @@ export async function updatePassword(password: string) {
   if (error) throw error
 }
 
+// Extrai a mensagem de erro do corpo da resposta da Edge Function
+async function extractFunctionError(error: unknown): Promise<Error> {
+  try {
+    const ctx = (error as { context?: Response }).context
+    if (ctx) {
+      const body = await ctx.json()
+      const msg = body?.error || body?.message || body?.msg
+      if (msg) return new Error(String(msg))
+    }
+  } catch {
+    // ignora erro ao parsear body
+  }
+  return error instanceof Error ? error : new Error(String(error))
+}
+
 // Chama a Edge Function first-access (mesma usada pelo portal web)
-export async function firstAccessStart(email: string) {
-  const { data, error } = await supabase.functions.invoke('first-access', {
-    body: { action: 'start', email: email.toLowerCase().trim() },
-  })
-  if (error) throw error
+export async function firstAccessStart(email: string, birthDate?: string) {
+  const body: Record<string, string> = { action: 'start', email: email.toLowerCase().trim() }
+  if (birthDate) body.birth_date = birthDate
+  const { data, error } = await supabase.functions.invoke('first-access', { body })
+  if (error) throw await extractFunctionError(error)
   return data as { requiresBirthDate: boolean; token?: string }
 }
 
@@ -44,6 +59,6 @@ export async function firstAccessComplete(params: {
   const { data, error } = await supabase.functions.invoke('first-access', {
     body: { action: 'complete', ...params },
   })
-  if (error) throw error
+  if (error) throw await extractFunctionError(error)
   return data
 }

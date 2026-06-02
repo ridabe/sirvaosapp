@@ -46,8 +46,9 @@ export default function PrimeiroAcessoScreen() {
     const clean = birthDate.replace(/\D/g, '')
     if (clean.length !== 8) { setFieldError('Informe a data no formato DD/MM/AAAA.'); return }
 
-    // Token vem após confirmação de data de nascimento
-    const result = await start(email)
+    // Passa a data em ISO para o start validar e retornar o token
+    const birthDateISO = birthDate.split('/').reverse().join('-')
+    const result = await start(email, birthDateISO)
     if (!result) return
     if (result.token) setToken(result.token)
     setStep('password')

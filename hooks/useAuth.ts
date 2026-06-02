@@ -21,13 +21,19 @@ const ERROR_MESSAGES: Record<AuthError, string> = {
 }
 
 function parseError(error: unknown): string {
-  const msg = error instanceof Error ? error.message : String(error)
-  if (msg.includes('Invalid login credentials')) return ERROR_MESSAGES.INVALID_CREDENTIALS
-  if (msg.includes('Email not found') || msg.includes('member not found')) return ERROR_MESSAGES.EMAIL_NOT_FOUND
-  if (msg.includes('profile already active')) return ERROR_MESSAGES.FIRST_ACCESS_ACTIVE
-  if (msg.includes('birth_date required')) return ERROR_MESSAGES.BIRTH_DATE_REQUIRED
-  if (msg.includes('birth_date mismatch')) return ERROR_MESSAGES.BIRTH_DATE_MISMATCH
-  if (msg.includes('fetch') || msg.includes('network')) return ERROR_MESSAGES.NETWORK_ERROR
+  const msg = (error instanceof Error ? error.message : String(error)).toLowerCase()
+
+  if (msg.includes('invalid login credentials') || msg.includes('invalid_credentials')) return ERROR_MESSAGES.INVALID_CREDENTIALS
+  if (msg.includes('email not found') || msg.includes('member not found') || msg.includes('no member')) return ERROR_MESSAGES.EMAIL_NOT_FOUND
+  if (msg.includes('profile already active') || msg.includes('already active') || msg.includes('already exists')) return ERROR_MESSAGES.FIRST_ACCESS_ACTIVE
+  if (msg.includes('birth_date required') || msg.includes('birth date required')) return ERROR_MESSAGES.BIRTH_DATE_REQUIRED
+  if (msg.includes('birth_date mismatch') || msg.includes('birth date mismatch') || msg.includes('data de nascimento')) return ERROR_MESSAGES.BIRTH_DATE_MISMATCH
+  if (msg.includes('fetch') || msg.includes('network') || msg.includes('failed to fetch')) return ERROR_MESSAGES.NETWORK_ERROR
+
+  // Mostra a mensagem original se vier em português (vinda da Edge Function)
+  const original = error instanceof Error ? error.message : String(error)
+  if (original.length > 0 && original.length < 200) return original
+
   return ERROR_MESSAGES.UNKNOWN
 }
 
@@ -65,11 +71,11 @@ export function useFirstAccess() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function start(email: string) {
+  async function start(email: string, birthDate?: string) {
     setLoading(true)
     setError(null)
     try {
-      return await firstAccessStart(email)
+      return await firstAccessStart(email, birthDate)
     } catch (e) {
       setError(parseError(e))
       return null
