@@ -3,8 +3,16 @@ import { Slot, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
+import { NotificationsProvider } from '@/context/NotificationsContext'
+import { usePushNotifications } from '@/hooks/usePushNotifications'
 
 SplashScreen.preventAutoHideAsync()
+
+function PushSetup() {
+  const { profile } = useAuth()
+  usePushNotifications({ profileId: profile?.id })
+  return null
+}
 
 function RootLayoutNav() {
   const { session, loading } = useAuth()
@@ -22,14 +30,21 @@ function RootLayoutNav() {
     SplashScreen.hideAsync()
   }, [session, loading])
 
-  return <Slot />
+  return (
+    <>
+      <PushSetup />
+      <Slot />
+    </>
+  )
 }
 
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <StatusBar style="light" />
-      <RootLayoutNav />
+      <NotificationsProvider>
+        <StatusBar style="light" />
+        <RootLayoutNav />
+      </NotificationsProvider>
     </AuthProvider>
   )
 }

@@ -10,25 +10,10 @@ import { useModules, AppModule } from '@/hooks/useModules'
 import { useEvents, TenantEvent } from '@/hooks/useEvents'
 import { useAnnouncements, Announcement } from '@/hooks/useAnnouncements'
 import { SkeletonBox } from '@/components/ui/SkeletonBox'
+import { getModuleRoute } from '@/constants/modules'
 import { colors } from '@/constants/colors'
 import { spacing, fontSize, radius } from '@/lib/theme'
 import { useState, useCallback } from 'react'
-
-const MODULE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  louvor: 'musical-notes',
-  financeiro: 'wallet',
-  kids: 'happy',
-  'escola-biblica': 'book',
-  'acao-social': 'heart',
-}
-
-const MODULE_COLORS: Record<string, string> = {
-  louvor: '#7C3AED',
-  financeiro: '#059669',
-  kids: '#D97706',
-  'escola-biblica': '#2563EB',
-  'acao-social': '#DC2626',
-}
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
   culto: 'Culto',
@@ -86,6 +71,8 @@ export default function HomeScreen() {
   }, [refetchMember, refetchModules, refetchEvents, refetchAnnouncements])
 
   const adminModules = modules.filter(m => m.isAdmin)
+  const ministryModules = modules.filter(m => m.category === 'ministry')
+  const featureModules = modules.filter(m => m.category === 'feature')
 
   return (
     <ScrollView
@@ -150,38 +137,64 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <SectionHeader title="Administração" icon="shield-checkmark-outline" />
           <View style={styles.adminGrid}>
-            {adminModules.map(mod => (
-              <AdminCard
-                key={mod.id}
-                module={mod}
-                onPress={() => router.push(`/(app)/modulos/${mod.slug}` as any)}
-              />
-            ))}
+            {adminModules.map(mod => {
+              const cfg = getModuleRoute(mod.slug)
+              if (!cfg) return null
+              return (
+                <AdminCard
+                  key={mod.id}
+                  module={mod}
+                  onPress={() => router.push(`/(app)/modulos/${cfg.routeSlug}` as any)}
+                />
+              )
+            })}
           </View>
         </View>
       )}
 
       {/* Meus ministérios */}
-      <View style={styles.section}>
-        <SectionHeader title="Meus ministérios" icon="grid-outline" />
-        {modulesLoading ? (
-          <ModulesSkeleton />
-        ) : modulesError && modulesError !== 'offline' ? (
-          <ErrorState message="Não foi possível carregar os módulos." onRetry={refetchModules} />
-        ) : modules.length === 0 ? (
-          <EmptyState icon="grid-outline" message="Nenhum ministério ativo no momento." />
-        ) : (
+      {(!modulesLoading && ministryModules.length > 0) || modulesLoading ? (
+        <View style={styles.section}>
+          <SectionHeader title="Meus ministérios" icon="grid-outline" />
+          {modulesLoading ? (
+            <ModulesSkeleton />
+          ) : modulesError && modulesError !== 'offline' ? (
+            <ErrorState message="Não foi possível carregar os módulos." onRetry={refetchModules} />
+          ) : (
+            <View style={styles.modulesGrid}>
+              {ministryModules.map(mod => {
+                const cfg = getModuleRoute(mod.slug)
+                return (
+                  <ModuleCard
+                    key={mod.id}
+                    module={mod}
+                    onPress={cfg ? () => router.push(`/(app)/modulos/${cfg.routeSlug}` as any) : () => {}}
+                  />
+                )
+              })}
+            </View>
+          )}
+        </View>
+      ) : null}
+
+      {/* Funcionalidades do app */}
+      {(!modulesLoading && featureModules.length > 0) && (
+        <View style={styles.section}>
+          <SectionHeader title="Funcionalidades" icon="apps-outline" />
           <View style={styles.modulesGrid}>
-            {modules.map(mod => (
-              <ModuleCard
-                key={mod.id}
-                module={mod}
-                onPress={() => router.push(`/(app)/modulos/${mod.slug}` as any)}
-              />
-            ))}
+            {featureModules.map(mod => {
+              const cfg = getModuleRoute(mod.slug)
+              return (
+                <ModuleCard
+                  key={mod.id}
+                  module={mod}
+                  onPress={cfg ? () => router.push(`/(app)/modulos/${cfg.routeSlug}` as any) : () => {}}
+                />
+              )
+            })}
           </View>
-        )}
-      </View>
+        </View>
+      )}
 
       {/* Próximos eventos */}
       <View style={styles.section}>
@@ -230,8 +243,9 @@ function SectionHeader({ title, icon }: { title: string; icon: keyof typeof Ioni
 }
 
 function ModuleCard({ module: mod, onPress }: { module: AppModule; onPress: () => void }) {
-  const icon = MODULE_ICONS[mod.slug] ?? 'apps'
-  const accent = MODULE_COLORS[mod.slug] ?? colors.brand.primary
+  const cfg = getModuleRoute(mod.slug)
+  const icon = cfg?.icon ?? 'apps'
+  const accent = cfg?.accentColor ?? colors.brand.primary
 
   return (
     <TouchableOpacity style={styles.moduleCard} onPress={onPress} activeOpacity={0.8}>
@@ -249,8 +263,9 @@ function ModuleCard({ module: mod, onPress }: { module: AppModule; onPress: () =
 }
 
 function AdminCard({ module: mod, onPress }: { module: AppModule; onPress: () => void }) {
-  const icon = MODULE_ICONS[mod.slug] ?? 'apps'
-  const accent = MODULE_COLORS[mod.slug] ?? colors.brand.primary
+  const cfg = getModuleRoute(mod.slug)
+  const icon = cfg?.icon ?? 'apps'
+  const accent = cfg?.accentColor ?? colors.brand.primary
 
   return (
     <TouchableOpacity style={[styles.adminCard, { borderLeftColor: accent }]} onPress={onPress} activeOpacity={0.8}>

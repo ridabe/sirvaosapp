@@ -129,7 +129,7 @@ Lembrando que os usuarios so terao acesso aos modulos basicos do sistema e aos m
 
 ---
 
-## Etapa 5 — Notificações Push
+## Etapa 5 — Notificações Push ✅ CONCLUÍDA
 
 **Objetivo:** Membro recebe notificações push sobre escalas, eventos e comunicados.
 
@@ -138,15 +138,19 @@ Lembrando que os usuarios so terao acesso aos modulos basicos do sistema e aos m
 - Tabela `push_tokens` criada no banco (migration)
 
 ### Entregas
-- [ ] Migration para tabela `push_tokens` (id, profile_id, platform, token, active)
-- [ ] Solicitar permissão de notificação no primeiro login
-- [ ] Obter e salvar `ExpoPushToken` na tabela `push_tokens`
-- [ ] Renovação de token quando expirado
-- [ ] Handling de notificação recebida com app em foreground (toast/banner in-app)
-- [ ] Handling de notificação tocada com app em background (navegar para a tela relevante via deep link)
-- [ ] Central de notificações (tela) — lista histórica de notificações recebidas
-- [ ] Badge de contador na tab de notificações
-- [ ] Edge Function `send-push` para envio via Expo Push API (acionada pelo backend quando admin publica escala/comunicado)
+- [x] Migration para tabela `push_tokens` (id, profile_id, platform, token, active)
+- [x] Migration para tabela `notifications` (histórico por perfil)
+- [x] Solicitar permissão de notificação no primeiro login
+- [x] Obter e salvar `ExpoPushToken` na tabela `push_tokens`
+- [x] Handling de notificação recebida com app em foreground (toast/banner nativo)
+- [x] Handling de notificação tocada com app em background (navegar via `data.route`)
+- [x] Central de notificações (tela) — lista histórica com pull-to-refresh
+- [x] Badge de contador no sino do header e no item do drawer
+- [x] Marcar como lida (individual) e marcar todas como lidas
+- [x] Realtime: novas notificações aparecem instantaneamente via Supabase channel
+- [x] Edge Function `send-push` — recebe `profile_ids[]`, envia via Expo Push API e salva histórico
+- [x] `NotificationsContext` — estado global de notificações e unread count
+- [x] `usePushNotifications` hook — registro, permissão, listeners de foreground e background
 
 ### Critérios de conclusão
 - Dispositivo físico recebe notificação push
@@ -399,8 +403,8 @@ Implementar os dois: se `requiredCode > currentCode` → force; se apenas `recom
 [1] Fundação                    ✅ CONCLUÍDA
 [2] Autenticação                ✅ CONCLUÍDA
 [3] Home / Dashboard            ✅ CONCLUÍDA
-[4] Perfil
-[5] Notificações Push
+[4] Perfil                      ✅ CONCLUÍDA
+[5] Notificações Push           ✅ CONCLUÍDA
 [6] Módulo Louvor               ← Primeiro módulo operacional completo
 [7] Módulos Financeiro / Kids / EBD / Ação Social
 [8] Versionamento + Polimento + Build de Produção

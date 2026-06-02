@@ -10,19 +10,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useMember } from '@/hooks/useMember'
 import { useModules } from '@/hooks/useModules'
 import { useSignOut } from '@/hooks/useAuth'
+import { useNotifications } from '@/context/NotificationsContext'
+import { getModuleRoute } from '@/constants/modules'
 import { colors } from '@/constants/colors'
 import { spacing, fontSize, radius } from '@/lib/theme'
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true)
-}
-
-const MODULE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  louvor: 'musical-notes-outline',
-  financeiro: 'wallet-outline',
-  kids: 'happy-outline',
-  'escola-biblica': 'book-outline',
-  'acao-social': 'heart-outline',
 }
 
 type NavItem = {
@@ -52,14 +46,25 @@ export function DrawerMenu({ onClose }: Props) {
   const { profile, firstName } = useMember()
   const { modules } = useModules(profile?.tenant_id)
   const { execute: signOut, loading: signingOut } = useSignOut()
+  const { unreadCount } = useNotifications()
 
+  // Ministérios onde o usuário é admin → seção "Ministérios" no drawer
   const adminModules: NavItem[] = modules
-    .filter(m => m.isAdmin)
-    .map(m => ({
-      label: m.name,
-      route: `/(app)/modulos/${m.slug}`,
-      icon: MODULE_ICONS[m.slug] ?? 'apps-outline',
-    }))
+    .filter(m => m.category === 'ministry' && m.isAdmin)
+    .flatMap(m => {
+      const cfg = getModuleRoute(m.slug)
+      if (!cfg) return []
+      return [{ label: m.name, route: `/(app)/modulos/${cfg.routeSlug}`, icon: cfg.icon }]
+    })
+
+  // Funcionalidades gerais (comunicados, eventos, mídias sociais) → seção "Funcionalidades"
+  const featureItems: NavItem[] = modules
+    .filter(m => m.category === 'feature')
+    .flatMap(m => {
+      const cfg = getModuleRoute(m.slug)
+      if (!cfg) return []
+      return [{ label: m.name, route: `/(app)/modulos/${cfg.routeSlug}`, icon: cfg.icon }]
+    })
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     Ministérios: true,
@@ -119,7 +124,12 @@ export function DrawerMenu({ onClose }: Props) {
         contentContainerStyle={styles.scrollContent}
       >
         {/* Principal */}
-        <NavSection title="Principal" icon="home-outline" items={STATIC_SECTIONS.principal} isActive={isActive} onNavigate={navigate} />
+        <NavSection title="Principal" icon="home-outline" items={STATIC_SECTIONS.principal} isActive={isActive} onNavigate={navigate} badgeCounts={{ '/(app)/notificacoes': unreadCount }} />
+
+        {/* Funcionalidades do app (eventos, comunicados, mídias) */}
+        {featureItems.length > 0 && (
+          <NavSection title="Funcionalidades" icon="apps-outline" items={featureItems} isActive={isActive} onNavigate={navigate} />
+        )}
 
         {/* Ministérios — somente para admins de módulo */}
         {adminModules.length > 0 && (
@@ -300,16 +310,32 @@ const styles = StyleSheet.create({
     color: colors.semantic.danger,
     fontWeight: '500',
   },
+  navBadge: {
+    marginLeft: 'auto',
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  navBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#fff',
+  },
 })
 
 function NavSection({
-  title, icon, items, isActive, onNavigate,
+  title, icon, items, isActive, onNavigate, badgeCounts = {},
 }: {
   title: string
   icon: keyof typeof Ionicons.glyphMap
   items: NavItem[]
   isActive: (route: string) => boolean
   onNavigate: (route: string) => void
+  badgeCounts?: Record<string, number>
 }) {
   return (
     <View style={styles.section}>
@@ -322,6 +348,7 @@ function NavSection({
       <View style={styles.items}>
         {items.map(item => {
           const active = isActive(item.route)
+          const badge = badgeCounts[item.route] ?? 0
           return (
             <TouchableOpacity
               key={item.route}
@@ -331,6 +358,11 @@ function NavSection({
             >
               <Ionicons name={item.icon} size={20} color={active ? colors.brand.primary : colors.neutral[500]} />
               <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>{item.label}</Text>
+              {badge > 0 && (
+                <View style={styles.navBadge}>
+                  <Text style={styles.navBadgeText}>{badge > 99 ? '99+' : badge}</Text>
+                </View>
+              )}
             </TouchableOpacity>
           )
         })}
