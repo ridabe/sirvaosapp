@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router'
-import { Home, Grid2x2, Bell, User } from 'lucide-react-native'
+import { Ionicons } from '@expo/vector-icons'
 
 export default function AppLayout() {
   return (
@@ -18,28 +18,28 @@ export default function AppLayout() {
         name="index"
         options={{
           title: 'Início',
-          tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="modulos"
         options={{
           title: 'Ministérios',
-          tabBarIcon: ({ color, size }) => <Grid2x2 size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="notificacoes"
         options={{
           title: 'Notificações',
-          tabBarIcon: ({ color, size }) => <Bell size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="notifications-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="perfil"
         options={{
           title: 'Perfil',
-          tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
         }}
       />
     </Tabs>

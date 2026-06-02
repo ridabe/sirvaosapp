@@ -1,18 +1,25 @@
-import { View, Text, ScrollView } from 'react-native'
+import { View, Text, ScrollView, StyleSheet } from 'react-native'
+import { colors } from '@/constants/colors'
 
-// Etapa 3 — home completa com escalas, módulos e comunicados
 export default function HomeScreen() {
   return (
-    <ScrollView className="flex-1 bg-neutral-50">
-      <View className="bg-primary px-5 pt-14 pb-6">
-        <Text className="text-white text-sm">Bem-vindo de volta</Text>
-        <Text className="text-white text-2xl font-bold mt-1">Olá, Membro</Text>
+    <ScrollView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.subtitle}>Bem-vindo de volta</Text>
+        <Text style={styles.title}>Olá, Membro</Text>
       </View>
-      <View className="p-5">
-        <Text className="text-neutral-700 text-center">
-          Carregando seus dados...
-        </Text>
+      <View style={styles.body}>
+        <Text style={styles.placeholder}>Carregando seus dados...</Text>
       </View>
     </ScrollView>
   )
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.neutral[50] },
+  header: { backgroundColor: colors.brand.primary, paddingHorizontal: 20, paddingTop: 56, paddingBottom: 24 },
+  subtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 14 },
+  title: { color: '#fff', fontSize: 24, fontWeight: 'bold', marginTop: 4 },
+  body: { padding: 20 },
+  placeholder: { color: colors.neutral[700], textAlign: 'center' },
+})

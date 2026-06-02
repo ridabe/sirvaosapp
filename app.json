@@ -46,9 +46,7 @@
           "color": "#0E6B68"
         }
       ],
-      "expo-image",
-      "expo-splash-screen",
-      "expo-font"
+      "expo-splash-screen"
     ],
     "experiments": {
       "typedRoutes": true
