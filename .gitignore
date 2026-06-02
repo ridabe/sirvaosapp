@@ -1,0 +1,30 @@
+# Variáveis de ambiente — nunca commitar
+.env
+.env.local
+.env.*.local
+
+# Expo
+.expo/
+dist/
+node_modules/
+
+# Build outputs
+android/
+ios/
+*.aab
+*.apk
+*.ipa
+
+# EAS
+.eas/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
