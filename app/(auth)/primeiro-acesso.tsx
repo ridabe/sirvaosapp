@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ScrollView,
+  KeyboardAvoidingView, Platform, ScrollView, Keyboard,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -92,11 +92,13 @@ export default function PrimeiroAcessoScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
         bounces={false}
       >
         {/* Header */}
@@ -249,6 +251,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     marginTop: -20,
     padding: spacing.xl,
+    paddingBottom: spacing.xl + 120,
   },
   stepLabel: {
     fontSize: fontSize.lg,
