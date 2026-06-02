@@ -13,7 +13,7 @@ Cada etapa tem um escopo fechado e critérios de conclusão. **Não avançar par
 
 ---
 
-## Etapa 1 — Fundação do Projeto ✅
+## Etapa 1 — Fundação do Projeto ✅ CONCLUÍDA
 
 **Objetivo:** Projeto inicializado, estrutura de pastas criada, dependências base instaladas, repositório configurado e rodando no dispositivo.
 
@@ -31,12 +31,17 @@ Cada etapa tem um escopo fechado e critérios de conclusão. **Não avançar par
 - [x] GitHub Actions workflow de build AAB
 - [x] `.gitignore` protegendo `.env.local`
 - [x] Repositório com push para `main`
-- [ ] `npm install` executado com sucesso
-- [ ] `npx expo start` rodando no dispositivo/emulador sem erros
+- [x] `npm install` executado com sucesso
+- [x] `npx expo start` rodando no dispositivo/emulador sem erros
 
 ### Critérios de conclusão
-- App abre no dispositivo mostrando a tela de login (mesmo que vazia)
-- Nenhum erro de compilação ou import
+- [x] App abre no dispositivo mostrando a tela de login (mesmo que vazia)
+- [x] Nenhum erro de compilação ou import
+
+### Notas técnicas
+- NativeWind removido temporariamente: v4 tem conflito de dependências com SDK 54 no Expo Go (reanimated v4 → worklets → postcss async). Será reintegrado na Etapa 2 com configuração correta.
+- Estilização provisória: StyleSheet puro nas telas placeholder.
+- SDK 54 confirmado: expo-router 6.x, React 19.1, RN 0.81.5.
 
 ---
 
