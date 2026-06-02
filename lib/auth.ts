@@ -52,13 +52,19 @@ export async function firstAccessStart(email: string, birthDate?: string) {
 }
 
 export async function firstAccessComplete(params: {
+  email: string
   token: string
   password: string
   birthDate?: string
 }) {
-  const { data, error } = await supabase.functions.invoke('first-access', {
-    body: { action: 'complete', ...params },
-  })
+  const body: Record<string, string> = {
+    action: 'complete',
+    email: params.email.toLowerCase().trim(),
+    token: params.token,
+    password: params.password,
+  }
+  if (params.birthDate) body.birth_date = params.birthDate
+  const { data, error } = await supabase.functions.invoke('first-access', { body })
   if (error) throw await extractFunctionError(error)
   return data
 }

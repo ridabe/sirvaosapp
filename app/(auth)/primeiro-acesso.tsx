@@ -70,7 +70,7 @@ export default function PrimeiroAcessoScreen() {
       ? birthDate.split('/').reverse().join('-')
       : undefined
 
-    const result = await complete(token, password, birthDateISO)
+    const result = await complete(email, token, password, birthDateISO)
     if (!result) return
 
     // Login automático após ativação
