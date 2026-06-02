@@ -59,6 +59,8 @@ Cada etapa tem um escopo fechado e critérios de conclusão. **Não avançar par
 - [ ] Sessão persistida com SecureStore (app fecha e reabre logado)
 - [ ] Tratamento de erros com mensagens amigáveis (lista no SPEC seção 12)
 - [ ] Proteção de rotas: sem sessão → login; com sessão → home
+- [ ] Login com digital quando o celular do usuario permitir
+- [ ] fluxo para usar a camera do usuario para futuros modulos do sistema
 
 ### Critérios de conclusão
 - Membro real (cadastrado no banco) consegue fazer primeiro acesso pelo app
@@ -214,27 +216,153 @@ Cada etapa tem um escopo fechado e critérios de conclusão. **Não avançar par
 
 ---
 
-## Etapa 8 — Polimento, Testes e Build de Produção
+## Etapa 8 — Versionamento, Polimento, Testes e Build de Produção
 
-**Objetivo:** App pronto para distribuição interna e aprovação antes do Google Play.
+**Objetivo:** App pronto para distribuição interna, com sistema de atualização forçada/sugerida já funcionando antes do primeiro deploy na Play Store.
 
-### Entregas
+---
+
+### 8.1 — Estratégia de Atualização do App (versão via Supabase)
+
+#### Por que Supabase e não variável de ambiente?
+
+O projeto mensagem_transformadora usa uma variável de ambiente no Vercel (`APP_VERSION_CODE`) servida por uma API route Next.js. Para o SirvaOS App a abordagem é mais simples e mais integrada: **a versão requerida fica diretamente no Supabase**, na tabela `app_config`. Vantagens:
+
+- Sem dependência de um módulo web rodando para o app funcionar
+- Atualizável pelo painel do Supabase (SQL Editor) ou futuramente pelo Admin Global SirvaOS
+- Lido com o mesmo cliente Supabase já usado pelo app — sem fetch extra para URL externa
+- A regra de RLS pode controlar quem lê (anon pode ler, apenas admin pode escrever)
+
+#### Estrutura da tabela
+
+```sql
+-- Migration: app_config
+create table public.app_config (
+  key   text primary key,
+  value text not null,
+  updated_at timestamptz default now()
+);
+
+-- RLS: leitura pública (anon), escrita apenas service_role/admin
+alter table public.app_config enable row level security;
+
+create policy "app_config leitura publica"
+  on public.app_config for select
+  using (true);
+
+-- Dado inicial
+insert into public.app_config (key, value) values
+  ('android_required_version_code', '1'),
+  ('android_play_store_url', 'https://play.google.com/store/apps/details?id=com.sirvaos.app');
+```
+
+#### Lógica de comparação no app
+
+```typescript
+// hooks/useAppUpdate.ts
+import Constants from 'expo-constants'
+import { Alert, Linking } from 'react-native'
+import { supabase } from '@/lib/supabase'
+
+export function useAppUpdate() {
+  async function checkForUpdate() {
+    const currentCode = Constants.expoConfig?.android?.versionCode
+    if (!currentCode) return
+
+    const { data } = await supabase
+      .from('app_config')
+      .select('key, value')
+      .in('key', ['android_required_version_code', 'android_play_store_url'])
+
+    if (!data) return
+
+    const config = Object.fromEntries(data.map(r => [r.key, r.value]))
+    const requiredCode = parseInt(config.android_required_version_code ?? '0', 10)
+    const storeUrl = config.android_play_store_url
+
+    if (requiredCode > currentCode) {
+      Alert.alert(
+        'Atualização disponível',
+        'Uma nova versão do SirvaOS está disponível na Play Store. Atualize para continuar usando o app.',
+        [
+          { text: 'Agora não', style: 'cancel' },
+          { text: 'Atualizar agora', onPress: () => Linking.openURL(storeUrl) },
+        ],
+        { cancelable: false }  // impede fechar pelo botão voltar se for atualização obrigatória
+      )
+    }
+  }
+
+  return { checkForUpdate }
+}
+```
+
+#### Onde chamar o hook
+
+No `app/_layout.tsx`, dentro do `RootLayoutNav`, logo após confirmar que há sessão ativa:
+
+```typescript
+const { checkForUpdate } = useAppUpdate()
+
+useEffect(() => {
+  if (!loading && session) {
+    checkForUpdate()
+  }
+}, [session, loading])
+```
+
+#### Fluxo completo de uma nova versão
+
+```
+1. Dev incrementa versionCode no app.json (ex: 1 → 2)
+2. Push para main → GitHub Actions compila o AAB automaticamente
+3. Dev faz upload do AAB para o Google Play (trilha interna → produção)
+4. Google Play aprova a versão
+5. Dev atualiza o banco:
+   UPDATE public.app_config
+   SET value = '2', updated_at = now()
+   WHERE key = 'android_required_version_code';
+6. Na próxima abertura do app por qualquer usuário, o hook detecta
+   requiredCode (2) > currentCode (1) e exibe o alerta
+7. Usuário toca "Atualizar agora" → abre Play Store na página do app
+```
+
+#### Diferença entre atualização sugerida e obrigatória
+
+Controlar via banco adicionando uma segunda chave:
+
+| Chave | Valor | Comportamento |
+|---|---|---|
+| `android_required_version_code` | Código mínimo obrigatório | Modal sem botão "Agora não" (force update) |
+| `android_recommended_version_code` | Código recomendado | Modal com botão "Agora não" (soft update) |
+
+Implementar os dois: se `requiredCode > currentCode` → force; se apenas `recommendedCode > currentCode` → soft.
+
+---
+
+### 8.2 — Entregas de Polimento e Build
+
+- [ ] Migration da tabela `app_config` com valores iniciais no Supabase
+- [ ] Hook `useAppUpdate` implementado (`hooks/useAppUpdate.ts`)
+- [ ] Hook chamado no `_layout.tsx` após sessão confirmada
+- [ ] Suporte a force update (sem botão "Agora não") e soft update
+- [ ] Testar fluxo: alterar `android_required_version_code` no banco e confirmar que alerta aparece
 - [ ] Splash screen com logo SirvaOS e fundo `#0E6B68`
 - [ ] Ícone do app (adaptive icon Android)
 - [ ] Ícone de notificação
 - [ ] Animações e transições suaves entre telas
-- [ ] Verificação de acessibilidade (contraste, tamanho de toque)
+- [ ] Verificação de acessibilidade (contraste, tamanho de toque mínimo 44px)
 - [ ] Modo offline: dados em cache com feedback claro
-- [ ] Testes manuais dos fluxos críticos (login, primeiro acesso, escala, confirmação, push)
+- [ ] Testes manuais dos fluxos críticos (login, primeiro acesso, escala, confirmação, push, atualização)
 - [ ] Build `preview` (APK) para testes internos via EAS
 - [ ] Build `production` (AAB) via GitHub Actions
 - [ ] Configurar secrets no GitHub (`EXPO_TOKEN`, `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`)
-- [ ] Geração do arquivo `google-services.json` (Firebase para FCM, se necessário)
 - [ ] Revisão de segurança: nenhuma chave sensível no bundle
 
 ### Critérios de conclusão
 - APK instala e funciona em ao menos 3 dispositivos físicos diferentes
 - Build AAB gerado via GitHub Actions sem erros
+- Alerta de atualização aparece corretamente ao simular versão defasada
 - Nenhum crash nos fluxos principais
 
 ---
@@ -261,15 +389,15 @@ Cada etapa tem um escopo fechado e critérios de conclusão. **Não avançar par
 ## Resumo Visual das Etapas
 
 ```
-[1] Fundação          ← CONCLUÍDA (estrutura + repositório)
-[2] Autenticação      ← PRÓXIMA
-[3] Home/Dashboard
+[1] Fundação                    ✅ CONCLUÍDA
+[2] Autenticação                ← PRÓXIMA (login, 1º acesso, biometria, câmera)
+[3] Home / Dashboard
 [4] Perfil
 [5] Notificações Push
-[6] Módulo Louvor     ← Primeiro módulo operacional completo
+[6] Módulo Louvor               ← Primeiro módulo operacional completo
 [7] Módulos Financeiro / Kids / EBD / Ação Social
-[8] Polimento + Build de Produção
-[9] Google Play
+[8] Versionamento + Polimento + Build de Produção
+[9] Google Play — lançamento interno
 ```
 
 ---
@@ -280,6 +408,7 @@ Cada etapa tem um escopo fechado e critérios de conclusão. **Não avançar par
 - **Sem funcionalidades extras.** Se surgir uma ideia durante o desenvolvimento, anotar aqui na seção "Backlog" — não implementar na mesma etapa.
 - **Testar no dispositivo físico.** Não validar só no emulador.
 - **Migrations do banco são coordenadas.** As tabelas de módulo (Etapas 6 e 7) devem ser criadas em sincronia com o módulo web para não divergir o schema.
+- **Versionamento é um processo, não só código.** A cada nova versão: (1) incrementar `versionCode` no `app.json`, (2) gerar AAB via GitHub Actions, (3) subir para Play Store, (4) após aprovação atualizar `android_required_version_code` na tabela `app_config` do Supabase. Os 4 passos são obrigatórios — pular o 4 significa que usuários não serão notificados da atualização.
 
 ---
 
