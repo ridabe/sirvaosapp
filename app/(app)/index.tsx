@@ -1,21 +1,25 @@
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native'
 import { colors } from '@/constants/colors'
 import { useMember } from '@/hooks/useMember'
+import { spacing, fontSize } from '@/lib/theme'
 
 export default function HomeScreen() {
   const { firstName, loading } = useMember()
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.subtitle}>Bem-vindo de volta</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Saudação */}
+      <View style={styles.greeting}>
+        <Text style={styles.greetingSubtitle}>Bem-vindo de volta</Text>
         {loading
-          ? <ActivityIndicator color="#fff" style={{ marginTop: 4 }} />
-          : <Text style={styles.title}>Olá, {firstName ?? 'Membro'}</Text>
+          ? <ActivityIndicator color={colors.brand.primary} style={{ marginTop: 4 }} />
+          : <Text style={styles.greetingTitle}>Olá, {firstName ?? 'Membro'} 👋</Text>
         }
       </View>
-      <View style={styles.body}>
-        <Text style={styles.placeholder}>Carregando seus dados...</Text>
+
+      {/* Conteúdo da Etapa 3 será adicionado aqui */}
+      <View style={styles.placeholder}>
+        <Text style={styles.placeholderText}>Seus módulos e eventos aparecerão aqui.</Text>
       </View>
     </ScrollView>
   )
@@ -23,9 +27,18 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.neutral[50] },
-  header: { backgroundColor: colors.brand.primary, paddingHorizontal: 20, paddingTop: 56, paddingBottom: 24 },
-  subtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 14 },
-  title: { color: '#fff', fontSize: 24, fontWeight: 'bold', marginTop: 4 },
-  body: { padding: 20 },
-  placeholder: { color: colors.neutral[700], textAlign: 'center' },
+  content: { padding: spacing.lg },
+  greeting: { marginBottom: spacing.xl },
+  greetingSubtitle: { fontSize: fontSize.sm, color: colors.neutral[500] },
+  greetingTitle: { fontSize: fontSize.xl, fontWeight: '700', color: colors.neutral[950], marginTop: 4 },
+  placeholder: {
+    backgroundColor: colors.neutral.white,
+    borderRadius: 12,
+    padding: spacing.xl,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+    borderStyle: 'dashed',
+  },
+  placeholderText: { fontSize: fontSize.sm, color: colors.neutral[500], textAlign: 'center' },
 })
