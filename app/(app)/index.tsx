@@ -1,12 +1,18 @@
-import { View, Text, ScrollView, StyleSheet } from 'react-native'
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native'
 import { colors } from '@/constants/colors'
+import { useMember } from '@/hooks/useMember'
 
 export default function HomeScreen() {
+  const { firstName, loading } = useMember()
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.subtitle}>Bem-vindo de volta</Text>
-        <Text style={styles.title}>Olá, Membro</Text>
+        {loading
+          ? <ActivityIndicator color="#fff" style={{ marginTop: 4 }} />
+          : <Text style={styles.title}>Olá, {firstName ?? 'Membro'}</Text>
+        }
       </View>
       <View style={styles.body}>
         <Text style={styles.placeholder}>Carregando seus dados...</Text>
