@@ -6,13 +6,22 @@ import { Platform } from 'react-native'
 import { useRouter } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 
+export type InAppNotification = {
+  id: string
+  title: string
+  body: string
+  route?: string
+}
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    // Quando o app está em foreground, suprime o banner nativo do sistema
+    // e mostra nosso banner in-app customizado no lugar
+    shouldShowAlert: false,
     shouldPlaySound: true,
     shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
+    shouldShowBanner: false,
+    shouldShowList: false,
   }),
 })
 
@@ -21,7 +30,6 @@ async function registerForPushNotifications(): Promise<string | null> {
   console.log('[Push] appOwnership:', appOwnership)
   console.log('[Push] isDevice:', Device.isDevice)
 
-  // Push não funciona no Expo Go a partir do SDK 53 — requer development build
   if (appOwnership === 'expo') {
     console.warn('[Push] Expo Go detectado — push desabilitado. Use um development build.')
     return null
@@ -33,15 +41,11 @@ async function registerForPushNotifications(): Promise<string | null> {
   }
 
   const { status: existing } = await Notifications.getPermissionsAsync()
-  console.log('[Push] Status de permissão atual:', existing)
-
   let finalStatus = existing
 
   if (existing !== 'granted') {
-    console.log('[Push] Solicitando permissão...')
     const { status } = await Notifications.requestPermissionsAsync()
     finalStatus = status
-    console.log('[Push] Status após solicitação:', status)
   }
 
   if (finalStatus !== 'granted') {
@@ -60,16 +64,10 @@ async function registerForPushNotifications(): Promise<string | null> {
 
   try {
     const projectId = Constants.expoConfig?.extra?.eas?.projectId
-    console.log('[Push] projectId:', projectId)
-
-    if (!projectId) {
-      console.error('[Push] projectId não encontrado em Constants.expoConfig.extra.eas.projectId')
-    }
-
     const token = await Notifications.getExpoPushTokenAsync(
       projectId ? { projectId } : undefined
     )
-    console.log('[Push] Token obtido com sucesso:', token.data)
+    console.log('[Push] Token obtido:', token.data)
     return token.data
   } catch (e) {
     console.error('[Push] Erro ao obter token:', e)
@@ -79,61 +77,95 @@ async function registerForPushNotifications(): Promise<string | null> {
 
 async function saveToken(profileId: string, token: string) {
   const platform = Platform.OS === 'ios' ? 'ios' : 'android'
-  console.log('[Push] Salvando token no banco para profile:', profileId)
-
   const { error } = await (supabase as any)
     .from('push_tokens')
     .upsert(
-      {
-        profile_id: profileId,
-        token,
-        platform,
-        active: true,
-        updated_at: new Date().toISOString(),
-      },
+      { profile_id: profileId, token, platform, active: true, updated_at: new Date().toISOString() },
       { onConflict: 'profile_id,token' }
     )
+  if (error) console.error('[Push] Erro ao salvar token:', JSON.stringify(error))
+  else console.log('[Push] Token salvo com sucesso.')
+}
 
-  if (error) {
-    console.error('[Push] Erro ao salvar token no banco:', JSON.stringify(error))
-  } else {
-    console.log('[Push] Token salvo com sucesso no banco.')
-  }
+// Salva a notificação recebida no histórico da tabela (fallback quando
+// não veio pela edge function send-push, ex: testes diretos)
+async function saveNotificationToHistory(profileId: string, notification: Notifications.Notification) {
+  const content = notification.request.content
+  if (!content.title && !content.body) return
+
+  // Verifica se já existe pelo ID da notificação para evitar duplicatas
+  const notifId = notification.request.identifier
+  const { data: existing } = await (supabase as any)
+    .from('notifications')
+    .select('id')
+    .eq('profile_id', profileId)
+    .eq('data->>expo_id', notifId)
+    .limit(1)
+
+  if (existing?.length) return // já salvo pela edge function ou por chamada anterior
+
+  await (supabase as any)
+    .from('notifications')
+    .insert({
+      profile_id: profileId,
+      title: content.title ?? 'Notificação',
+      body: content.body ?? '',
+      data: {
+        ...(content.data as object ?? {}),
+        expo_id: notifId,
+      },
+    })
 }
 
 type Options = {
   profileId: string | undefined
-  onNotification?: (notification: Notifications.Notification) => void
+  onInAppNotification?: (n: InAppNotification) => void
 }
 
-export function usePushNotifications({ profileId, onNotification }: Options) {
+export function usePushNotifications({ profileId, onInAppNotification }: Options) {
   const router = useRouter()
   const responseListener = useRef<Notifications.EventSubscription | null>(null)
   const notificationListener = useRef<Notifications.EventSubscription | null>(null)
 
   useEffect(() => {
-    console.log('[Push] useEffect disparado, profileId:', profileId)
-    if (!profileId) {
-      console.log('[Push] profileId ainda não disponível, aguardando...')
-      return
-    }
+    if (!profileId) return
 
     registerForPushNotifications().then(token => {
-      if (token) {
-        saveToken(profileId, token)
-      } else {
-        console.warn('[Push] Nenhum token obtido — registro não realizado.')
+      if (token) saveToken(profileId, token)
+    })
+
+    // Notificação recebida com app ABERTO (foreground)
+    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+      const content = notification.request.content
+      console.log('[Push] Recebida em foreground:', content.title)
+
+      // Salva no histórico
+      saveNotificationToHistory(profileId, notification)
+
+      // Dispara banner in-app customizado
+      if (content.title || content.body) {
+        const data = content.data as Record<string, string> | undefined
+        onInAppNotification?.({
+          id: notification.request.identifier,
+          title: content.title ?? 'Notificação',
+          body: content.body ?? '',
+          route: data?.route,
+        })
       }
     })
 
-    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-      console.log('[Push] Notificação recebida em foreground:', notification.request.content.title)
-      onNotification?.(notification)
-    })
-
+    // Notificação tocada com app em BACKGROUND ou fechado
     responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-      const data = response.notification.request.content.data as Record<string, string> | undefined
+      const notification = response.notification
+      const content = notification.request.content
+      const data = content.data as Record<string, string> | undefined
+
       console.log('[Push] Notificação tocada, data:', data)
+
+      // Salva no histórico (caso não tenha sido salvo antes)
+      saveNotificationToHistory(profileId, notification)
+
+      // Navega para a rota correta
       if (data?.route) {
         router.push(data.route as any)
       } else {

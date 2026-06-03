@@ -1,26 +1,36 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Slot, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { NotificationsProvider } from '@/context/NotificationsContext'
-import { usePushNotifications } from '@/hooks/usePushNotifications'
+import { usePushNotifications, InAppNotification } from '@/hooks/usePushNotifications'
 import { useAppUpdate } from '@/hooks/useAppUpdate'
+import { InAppNotificationBanner } from '@/components/ui/InAppNotificationBanner'
 
 SplashScreen.preventAutoHideAsync()
 
 function AppSetup() {
   const { profile } = useAuth()
   const { checkForUpdate } = useAppUpdate()
+  const [inAppNotif, setInAppNotif] = useState<InAppNotification | null>(null)
 
-  usePushNotifications({ profileId: profile?.id })
+  usePushNotifications({
+    profileId: profile?.id,
+    onInAppNotification: (n) => setInAppNotif(n),
+  })
 
-  // Verifica atualização assim que o perfil carregar (usuário logado)
+  // Verifica atualização assim que o perfil carregar
   useEffect(() => {
     if (profile?.id) checkForUpdate()
   }, [profile?.id])
 
-  return null
+  return (
+    <InAppNotificationBanner
+      notification={inAppNotif}
+      onDismiss={() => setInAppNotif(null)}
+    />
+  )
 }
 
 function RootLayoutNav() {
