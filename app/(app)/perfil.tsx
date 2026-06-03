@@ -6,6 +6,7 @@ import { Image } from 'expo-image'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useState, useEffect } from 'react'
+import Constants from 'expo-constants'
 import { useMember } from '@/hooks/useMember'
 import { useSignOut } from '@/hooks/useAuth'
 import { useModules } from '@/hooks/useModules'
@@ -16,6 +17,9 @@ import {
 import { SkeletonBox } from '@/components/ui/SkeletonBox'
 import { colors } from '@/constants/colors'
 import { spacing, fontSize, radius } from '@/lib/theme'
+
+const APP_VERSION = Constants.expoConfig?.version ?? '—'
+const APP_BUILD = Constants.expoConfig?.android?.versionCode ?? '—'
 
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—'
@@ -344,6 +348,12 @@ export default function PerfilScreen() {
             </>
         }
       </TouchableOpacity>
+
+      {/* Versão do app */}
+      <View style={styles.versionBlock}>
+        <Text style={styles.versionText}>SirvaOS v{APP_VERSION}</Text>
+        <Text style={styles.versionBuild}>build {APP_BUILD}</Text>
+      </View>
     </ScrollView>
   )
 }
@@ -417,4 +427,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.semantic.dangerSoft,
   },
   logoutText: { fontSize: fontSize.md, fontWeight: '600', color: colors.semantic.danger },
+
+  versionBlock: { alignItems: 'center', gap: 2, paddingVertical: spacing.md },
+  versionText: { fontSize: fontSize.xs, color: colors.neutral[400], fontWeight: '500' },
+  versionBuild: { fontSize: 10, color: colors.neutral[300] },
 })

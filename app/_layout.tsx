@@ -5,12 +5,21 @@ import * as SplashScreen from 'expo-splash-screen'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { NotificationsProvider } from '@/context/NotificationsContext'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
+import { useAppUpdate } from '@/hooks/useAppUpdate'
 
 SplashScreen.preventAutoHideAsync()
 
-function PushSetup() {
+function AppSetup() {
   const { profile } = useAuth()
+  const { checkForUpdate } = useAppUpdate()
+
   usePushNotifications({ profileId: profile?.id })
+
+  // Verifica atualização assim que o perfil carregar (usuário logado)
+  useEffect(() => {
+    if (profile?.id) checkForUpdate()
+  }, [profile?.id])
+
   return null
 }
 
@@ -32,7 +41,7 @@ function RootLayoutNav() {
 
   return (
     <>
-      <PushSetup />
+      <AppSetup />
       <Slot />
     </>
   )
