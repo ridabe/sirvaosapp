@@ -14,11 +14,7 @@ export function useAppUpdate() {
       const { data, error } = await (supabase as any)
         .from('app_config')
         .select('key, value')
-        .in('key', [
-          'android_required_version_code',
-          'android_recommended_version_code',
-          'android_play_store_url',
-        ])
+        .in('key', ['android_version_code', 'android_play_store_url'])
 
       if (error || !data?.length) return
 
@@ -26,15 +22,14 @@ export function useAppUpdate() {
         data.map((r: { key: string; value: string }) => [r.key, r.value])
       )
 
-      const requiredCode = parseInt(cfg.android_required_version_code ?? '0', 10)
-      const recommendedCode = parseInt(cfg.android_recommended_version_code ?? '0', 10)
+      const requiredCode = parseInt(cfg.android_version_code ?? '0', 10)
       const storeUrl = cfg.android_play_store_url ?? ''
 
       if (requiredCode > currentCode) {
-        // Atualização obrigatória — sem botão "Agora não"
+        // Atualização obrigatória
         Alert.alert(
-          '⚠️ Atualização obrigatória',
-          'Uma nova versão do SirvaOS é necessária para continuar usando o app. Atualize agora na Play Store.',
+          '⚠️ Atualização necessária',
+          'Uma nova versão do SirvaOS está disponível. Atualize agora para continuar usando o app.',
           [
             {
               text: 'Atualizar agora',
@@ -43,25 +38,9 @@ export function useAppUpdate() {
           ],
           { cancelable: false }
         )
-        return
-      }
-
-      if (recommendedCode > currentCode) {
-        // Atualização sugerida — com botão "Agora não"
-        Alert.alert(
-          '🆕 Nova versão disponível',
-          'Uma atualização do SirvaOS está disponível na Play Store com melhorias e correções.',
-          [
-            { text: 'Agora não', style: 'cancel' },
-            {
-              text: 'Atualizar agora',
-              onPress: () => Linking.openURL(storeUrl),
-            },
-          ]
-        )
       }
     } catch {
-      // Falha silenciosa — não bloqueia o app
+      // Falha silenciosa
     }
   }, [])
 
