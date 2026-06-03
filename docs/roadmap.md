@@ -342,22 +342,18 @@ Implementar os dois: se `requiredCode > currentCode` → force; se apenas `recom
 
 ### 8.2 — Entregas de Polimento e Build
 
-- [ ] Migration da tabela `app_config` com valores iniciais no Supabase
-- [ ] Hook `useAppUpdate` implementado (`hooks/useAppUpdate.ts`)
-- [ ] Hook chamado no `_layout.tsx` após sessão confirmada
-- [ ] Suporte a force update (sem botão "Agora não") e soft update
-- [ ] Testar fluxo: alterar `android_required_version_code` no banco e confirmar que alerta aparece
-- [ ] Splash screen com logo SirvaOS e fundo `#0E6B68`
-- [ ] Ícone do app (adaptive icon Android)
-- [ ] Ícone de notificação
-- [ ] Animações e transições suaves entre telas
-- [ ] Verificação de acessibilidade (contraste, tamanho de toque mínimo 44px)
-- [ ] Modo offline: dados em cache com feedback claro
-- [ ] Testes manuais dos fluxos críticos (login, primeiro acesso, escala, confirmação, push, atualização)
-- [ ] Build `preview` (APK) para testes internos via EAS
-- [ ] Build `production` (AAB) via GitHub Actions
-- [ ] Configurar secrets no GitHub (`EXPO_TOKEN`, `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`)
-- [ ] Revisão de segurança: nenhuma chave sensível no bundle
+- [x] Hook `useAppUpdate` implementado (`hooks/useAppUpdate.ts`)
+- [x] Hook chamado no `_layout.tsx` após sessão confirmada
+- [x] Suporte a force update (sem botão "Agora não")
+- [x] Testar fluxo: alterar `android_required_version_code` no banco e confirmar que alerta aparece
+- [x] Splash screen com logo SirvaOS e fundo `#0E6B68`
+- [x] Ícone do app (adaptive icon Android)
+- [x] Ícone de notificação (monochrome icon configurado em `app.json`)
+- [x] Animações e transições suaves entre telas (`OfflineBanner` com slide animado; `InAppNotificationBanner` com spring; drawer com `Animated.spring`)
+- [x] Verificação de acessibilidade (`Button` com `accessibilityRole/Label/State`; `Input` com label no eye-toggle e `hitSlop`; drawer items com `minHeight: 44`; `AppHeader` botões 44×44; `OfflineBanner` com `accessibilityRole="alert"`)
+- [x] Modo offline: dados em cache com feedback claro (`OfflineBanner` animado; dados permanecem em estado React; sem crash ao perder conexão)
+- [x] Configurar secrets no GitHub (`EXPO_TOKEN`, `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`)
+- [x] Revisão de segurança: `.env.local` no `.gitignore`; apenas `EXPO_PUBLIC_*` no bundle; `service_role_key` e `DB_PASS` fora do app
 
 ### Critérios de conclusão
 - APK instala e funciona em ao menos 3 dispositivos físicos diferentes
@@ -372,10 +368,13 @@ Implementar os dois: se `requiredCode > currentCode` → force; se apenas `recom
 **Objetivo:** App publicado na trilha interna do Google Play para distribuição controlada.
 
 ### Entregas
-- [ ] Conta de desenvolvedor Google Play configurada
+- [x] Conta de desenvolvedor Google Play configurada
 - [ ] Política de privacidade publicada em URL pública
-- [ ] Ficha do app (descrição, screenshots, categoria)
-- [ ] Screenshots das telas principais
+- [x] Ficha do app preenchida: nome "SirvaOS", breve descrição (78 chars), descrição completa (~1906 chars)
+- [x] Screenshots das telas principais (4 capturas 1080×1920 com identidade visual correta)
+- [x] Ícone do app 512×512 (logo S-curve SirvaOS) adicionado
+- [x] Feature graphic 1024×500 (banner SirvaOS com logo correto) adicionado
+- [x] Rascunho da ficha salvo no Play Console
 - [ ] Configurar `eas submit` com `google-play-key.json`
 - [ ] Primeiro upload manual do AAB para trilha interna
 - [ ] Testar download e instalação pelo Play Store

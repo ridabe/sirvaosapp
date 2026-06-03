@@ -2,7 +2,7 @@
   "expo": {
     "name": "SirvaOS",
     "slug": "sirvaos-app",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "platforms": ["android"],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -18,7 +18,7 @@
     },
     "android": {
       "package": "com.sirvaos.app",
-      "versionCode": 1,
+      "versionCode": 2,
       "googleServicesFile": "./google-services.json",
       "edgeToEdge": true,
       "adaptiveIcon": {
@@ -48,7 +48,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/icon.png",
+          "icon": "./assets/android-icon-monochrome.png",
           "color": "#0E6B68"
         }
       ],

@@ -28,6 +28,9 @@ export function Button({ label, onPress, loading = false, disabled = false, vari
       disabled={isDisabled}
       style={[btnStyle, isDisabled && common.btnDisabled, style]}
       activeOpacity={0.75}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
     >
       {loading
         ? <ActivityIndicator color={variant === 'primary' ? '#fff' : colors.brand.primary} />

@@ -34,7 +34,13 @@ export function Input({ label, error, password = false, ...props }: Props) {
           autoCapitalize={props.autoCapitalize ?? 'none'}
         />
         {password && (
-          <TouchableOpacity style={styles.eye} onPress={() => setShow(s => !s)}>
+          <TouchableOpacity
+            style={styles.eye}
+            onPress={() => setShow(s => !s)}
+            accessibilityRole="button"
+            accessibilityLabel={show ? 'Ocultar senha' : 'Mostrar senha'}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
             <Ionicons name={show ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.neutral[500]} />
           </TouchableOpacity>
         )}

@@ -287,9 +287,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingVertical: 11,
+    paddingVertical: 12,
     paddingHorizontal: spacing.md,
     borderRadius: radius.md,
+    minHeight: 44,
   },
   itemActive: {
     backgroundColor: colors.brand.primarySoft,
