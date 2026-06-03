@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Slot, useRouter, useSegments } from 'expo-router'
+import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
@@ -44,7 +44,7 @@ function RootLayoutNav() {
     if (!session && !inAuthGroup) {
       router.replace('/(auth)/login')
     } else if (session && inAuthGroup) {
-      router.replace('/(app)/')
+      router.replace('/(app)/' as never)
     }
     SplashScreen.hideAsync()
   }, [session, loading])
@@ -52,7 +52,7 @@ function RootLayoutNav() {
   return (
     <>
       <AppSetup />
-      <Slot />
+      <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
     </>
   )
 }
