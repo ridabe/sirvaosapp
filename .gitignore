@@ -18,6 +18,10 @@ ios/
 # EAS
 .eas/
 
+# Firebase — contém chaves sensíveis, não commitar
+google-services.json
+GoogleService-Info.plist
+
 # OS
 .DS_Store
 Thumbs.db
