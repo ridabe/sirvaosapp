@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, LayoutAnimation, Platform, UIManager,
+  ScrollView, LayoutAnimation,
 } from 'react-native'
 import { Image } from 'expo-image'
 import { useRouter, usePathname } from 'expo-router'
@@ -14,10 +14,6 @@ import { useNotifications } from '@/context/NotificationsContext'
 import { getModuleRoute } from '@/constants/modules'
 import { colors } from '@/constants/colors'
 import { spacing, fontSize, radius } from '@/lib/theme'
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true)
-}
 
 type NavItem = {
   label: string
