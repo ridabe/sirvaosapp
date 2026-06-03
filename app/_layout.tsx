@@ -3,7 +3,7 @@ import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
-import { NotificationsProvider } from '@/context/NotificationsContext'
+import { NotificationsProvider, useNotifications } from '@/context/NotificationsContext'
 import { usePushNotifications, InAppNotification } from '@/hooks/usePushNotifications'
 import { useAppUpdate } from '@/hooks/useAppUpdate'
 import { InAppNotificationBanner } from '@/components/ui/InAppNotificationBanner'
@@ -13,11 +13,16 @@ SplashScreen.preventAutoHideAsync()
 function AppSetup() {
   const { profile } = useAuth()
   const { checkForUpdate } = useAppUpdate()
+  const { refetch: refetchNotifications } = useNotifications()
   const [inAppNotif, setInAppNotif] = useState<InAppNotification | null>(null)
 
   usePushNotifications({
     profileId: profile?.id,
-    onInAppNotification: (n) => setInAppNotif(n),
+    onInAppNotification: (n) => {
+      setInAppNotif(n)
+      // Garante que a lista de notificações atualiza mesmo se o Realtime falhar
+      refetchNotifications()
+    },
   })
 
   // Verifica atualização assim que o perfil carregar
