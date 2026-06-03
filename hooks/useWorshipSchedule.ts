@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
+import { cacheGet, cacheSet, cacheGetStale } from '@/lib/cache'
 
 export type AssignmentStatus = 'pending' | 'confirmed' | 'declined'
 
@@ -36,6 +37,11 @@ export function useWorshipSchedule() {
     if (!member?.id) return
     setLoading(true)
     setError(null)
+    const cacheKey = `worship:${member.id}`
+
+    const cached = await cacheGet<{ upcoming: WorshipAssignment[]; past: WorshipAssignment[] }>(cacheKey)
+    if (cached) { setUpcoming(cached.upcoming); setPast(cached.past) }
+
     try {
       const now = new Date().toISOString()
 
@@ -64,10 +70,20 @@ export function useWorshipSchedule() {
           event: row.worship_events,
         }))
 
-      setUpcoming(all.filter(a => a.event.starts_at >= now))
-      setPast(all.filter(a => a.event.starts_at < now).reverse())
+      const upcoming = all.filter(a => a.event.starts_at >= now)
+      const past = all.filter(a => a.event.starts_at < now).reverse()
+      setUpcoming(upcoming)
+      setPast(past)
+      await cacheSet(cacheKey, { upcoming, past })
     } catch {
-      setError('Não foi possível carregar suas escalas.')
+      const stale = await cacheGetStale<{ upcoming: WorshipAssignment[]; past: WorshipAssignment[] }>(cacheKey)
+      if (stale) {
+        setUpcoming(stale.upcoming)
+        setPast(stale.past)
+        setError('Sem conexão — exibindo dados salvos.')
+      } else {
+        setError('Não foi possível carregar suas escalas.')
+      }
     } finally {
       setLoading(false)
     }

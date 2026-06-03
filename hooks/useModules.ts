@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { cacheGet, cacheSet, cacheGetStale } from '@/lib/cache'
 
 export type ModuleCategory = 'feature' | 'ministry'
 
@@ -38,6 +39,12 @@ export function useModules(tenantId: string | null | undefined) {
   async function fetchModules() {
     setLoading(true)
     setError(null)
+    const cacheKey = `modules:${tenantId}`
+
+    // Serve cache fresco imediatamente enquanto busca
+    const cached = await cacheGet<AppModule[]>(cacheKey)
+    if (cached) setModules(cached)
+
     try {
       // 1. Módulos ativos do tenant
       const { data, error: err } = await (supabase as any)
@@ -138,8 +145,15 @@ export function useModules(tenantId: string | null | undefined) {
         })
 
       setModules(result)
+      await cacheSet(cacheKey, result)
     } catch {
-      setError('Não foi possível carregar os módulos.')
+      const stale = await cacheGetStale<AppModule[]>(cacheKey)
+      if (stale) {
+        setModules(stale)
+        setError('Sem conexão — exibindo dados salvos.')
+      } else {
+        setError('Não foi possível carregar os módulos.')
+      }
     } finally {
       setLoading(false)
     }

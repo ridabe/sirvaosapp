@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
+import { cacheGet, cacheSet, cacheGetStale } from '@/lib/cache'
 
 export type FinancialCategory = {
   id: string
@@ -52,6 +53,11 @@ export function useFinancial() {
     if (!profile?.tenant_id) return
     setLoading(true)
     setError(null)
+    const cacheKey = `financial:${profile.tenant_id}`
+
+    const cached = await cacheGet<{ transactions: FinancialTransaction[]; categories: FinancialCategory[] }>(cacheKey)
+    if (cached) { setTransactions(cached.transactions); setCategories(cached.categories) }
+
     try {
       const [txRes, catRes] = await Promise.all([
         (supabase as any)
@@ -75,9 +81,20 @@ export function useFinancial() {
         amount: Number(row.amount),
         category: row.financial_categories ?? null,
       })))
-      setCategories(catRes.data ?? [])
+      const cats = catRes.data ?? []
+      setCategories(cats)
+      await cacheSet(cacheKey, { transactions: (txRes.data ?? []).map((row: any) => ({
+        ...row, amount: Number(row.amount), category: row.financial_categories ?? null,
+      })), categories: cats })
     } catch {
-      setError('Não foi possível carregar o financeiro.')
+      const stale = await cacheGetStale<{ transactions: FinancialTransaction[]; categories: FinancialCategory[] }>(cacheKey)
+      if (stale) {
+        setTransactions(stale.transactions)
+        setCategories(stale.categories)
+        setError('Sem conexão — exibindo dados salvos.')
+      } else {
+        setError('Não foi possível carregar o financeiro.')
+      }
     } finally {
       setLoading(false)
     }

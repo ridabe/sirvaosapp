@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
+import { cacheGet, cacheSet, cacheGetStale } from '@/lib/cache'
 
 export type KidsChild = {
   id: string
@@ -33,6 +34,11 @@ export function useKids() {
     if (!member?.id) return
     setLoading(true)
     setError(null)
+    const cacheKey = `kids:${member.id}`
+
+    const cached = await cacheGet<{ children: KidsChild[]; communications: KidsCommunication[] }>(cacheKey)
+    if (cached) { setChildren(cached.children); setCommunications(cached.communications) }
+
     try {
       // Busca filhos via kids_guardians → kids_children
       const { data: guardianRows, error: gErr } = await (supabase as any)
@@ -95,9 +101,22 @@ export function useKids() {
           attendanceCount: attendanceCounts[c.id] ?? 0,
         }))
       )
-      setCommunications(commsRes.data ?? [])
+      const comms = commsRes.data ?? []
+      setCommunications(comms)
+      await cacheSet(cacheKey, { children: (childrenRes.data ?? []).map((c: any) => ({
+        id: c.id, name: c.name, date_of_birth: c.date_of_birth, allergies: c.allergies,
+        special_needs: c.special_needs, notes: c.notes, is_active: c.is_active,
+        group: c.kids_groups ?? null, attendanceCount: attendanceCounts[c.id] ?? 0,
+      })), communications: comms })
     } catch {
-      setError('Não foi possível carregar os dados do Kids.')
+      const stale = await cacheGetStale<{ children: KidsChild[]; communications: KidsCommunication[] }>(cacheKey)
+      if (stale) {
+        setChildren(stale.children)
+        setCommunications(stale.communications)
+        setError('Sem conexão — exibindo dados salvos.')
+      } else {
+        setError('Não foi possível carregar os dados do Kids.')
+      }
     } finally {
       setLoading(false)
     }

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
+import { cacheGet, cacheSet, cacheGetStale } from '@/lib/cache'
 
 export type BibleSchoolMaterial = {
   id: string
@@ -45,6 +46,11 @@ export function useBibleSchool() {
     if (!member?.id) return
     setLoading(true)
     setError(null)
+    const cacheKey = `bible-school:${member.id}`
+
+    const cached = await cacheGet<BibleSchoolEnrollment[]>(cacheKey)
+    if (cached) setEnrollments(cached)
+
     try {
       // Busca o student_id pelo member_id
       const { data: studentData } = await (supabase as any)
@@ -120,9 +126,17 @@ export function useBibleSchool() {
         })
       )
 
-      setEnrollments(enriched.filter(Boolean) as BibleSchoolEnrollment[])
+      const result = enriched.filter(Boolean) as BibleSchoolEnrollment[]
+      setEnrollments(result)
+      await cacheSet(cacheKey, result)
     } catch {
-      setError('Não foi possível carregar os dados da Escola Bíblica.')
+      const stale = await cacheGetStale<BibleSchoolEnrollment[]>(cacheKey)
+      if (stale) {
+        setEnrollments(stale)
+        setError('Sem conexão — exibindo dados salvos.')
+      } else {
+        setError('Não foi possível carregar os dados da Escola Bíblica.')
+      }
     } finally {
       setLoading(false)
     }

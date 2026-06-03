@@ -3,6 +3,7 @@ import { View, Animated, TouchableWithoutFeedback, StyleSheet, Dimensions } from
 import { Slot } from 'expo-router'
 import { DrawerMenu } from '@/components/ui/DrawerMenu'
 import { AppHeader } from '@/components/ui/AppHeader'
+import { OfflineBanner } from '@/components/ui/OfflineBanner'
 import { usePathname } from 'expo-router'
 import { colors } from '@/constants/colors'
 
@@ -67,6 +68,7 @@ export default function AppLayout() {
 
       {/* Conteúdo da tela atual */}
       <View style={styles.content}>
+        <OfflineBanner />
         <Slot />
       </View>
 
