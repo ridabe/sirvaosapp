@@ -32,80 +32,56 @@ export type NewTransaction = {
   notes: string | null
 }
 
+export type MonthlyBar = {
+  label: string
+  income: number
+  expense: number
+}
+
+// Módulo financeiro é exclusivo de admins — quem acessa esta tela já tem permissão.
+// O hook busca TODAS as transações do tenant sem filtro por membro.
 export function useFinancial() {
-  const { profile, member } = useAuth()
-  const [isAdmin, setIsAdmin] = useState(false)
+  const { profile } = useAuth()
   const [transactions, setTransactions] = useState<FinancialTransaction[]>([])
   const [categories, setCategories] = useState<FinancialCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Verifica se o usuário é admin do módulo financeiro
-  const checkAdmin = useCallback(async () => {
-    if (!profile?.member_id) return false
-    const { data } = await (supabase as any)
-      .from('tenant_module_admins')
-      .select('id')
-      .eq('member_id', profile.member_id)
-      .in('module_id', [
-        // Busca o id do platform_module 'financial'
-        (await (supabase as any)
-          .from('platform_modules')
-          .select('id')
-          .eq('code', 'financial')
-          .single()
-        ).data?.id,
-      ])
-      .limit(1)
-    return (data?.length ?? 0) > 0
-  }, [profile?.member_id])
-
   const fetch = useCallback(async () => {
+    if (!profile?.tenant_id) return
     setLoading(true)
     setError(null)
     try {
-      // Resolve admin status
-      const admin = await checkAdmin()
-      setIsAdmin(admin)
+      const [txRes, catRes] = await Promise.all([
+        (supabase as any)
+          .from('financial_transactions')
+          .select(`
+            id, type, amount, description, date, payment_method, notes, member_id,
+            financial_categories!category_id (id, name, type, color)
+          `)
+          .order('date', { ascending: false }),
+        (supabase as any)
+          .from('financial_categories')
+          .select('id, name, type, color')
+          .order('type')
+          .order('sort_order'),
+      ])
 
-      // Busca categorias
-      const { data: cats } = await (supabase as any)
-        .from('financial_categories')
-        .select('id, name, type, color')
-        .order('type')
-        .order('sort_order')
-      setCategories(cats ?? [])
+      if (txRes.error) throw txRes.error
 
-      // Busca transações conforme papel
-      let query = (supabase as any)
-        .from('financial_transactions')
-        .select(`
-          id, type, amount, description, date, payment_method, notes, member_id,
-          financial_categories!category_id (id, name, type, color)
-        `)
-        .order('date', { ascending: false })
-
-      if (!admin && member?.id) {
-        // Membro comum: só as suas
-        query = query.eq('member_id', member.id)
-      }
-      // Admin: sem filtro → vê todas
-
-      const { data, error: err } = await query
-      if (err) throw err
-
-      setTransactions((data ?? []).map((row: any) => ({
+      setTransactions((txRes.data ?? []).map((row: any) => ({
         ...row,
         amount: Number(row.amount),
         category: row.financial_categories ?? null,
       })))
+      setCategories(catRes.data ?? [])
     } catch {
       setError('Não foi possível carregar o financeiro.')
     } finally {
       setLoading(false)
     }
-  }, [checkAdmin, member?.id])
+  }, [profile?.tenant_id])
 
   useEffect(() => { fetch() }, [fetch])
 
@@ -133,7 +109,6 @@ export function useFinancial() {
     }
   }
 
-  // Totais
   const totalIncome = transactions
     .filter(t => t.type === 'income')
     .reduce((s, t) => s + t.amount, 0)
@@ -141,12 +116,9 @@ export function useFinancial() {
     .filter(t => t.type === 'expense')
     .reduce((s, t) => s + t.amount, 0)
   const balance = totalIncome - totalExpense
-
-  // Agrupado por mês (últimos 6) para o gráfico
   const monthlyData = buildMonthlyData(transactions)
 
   return {
-    isAdmin,
     transactions,
     categories,
     totalIncome,
@@ -161,35 +133,22 @@ export function useFinancial() {
   }
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-export type MonthlyBar = {
-  label: string   // "Jan", "Fev" ...
-  income: number
-  expense: number
-}
-
 function buildMonthlyData(transactions: FinancialTransaction[]): MonthlyBar[] {
   const now = new Date()
-  const bars: MonthlyBar[] = []
-
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+  return Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
     const year = d.getFullYear()
-    const month = d.getMonth() // 0-indexed
+    const month = d.getMonth()
     const label = d.toLocaleDateString('pt-BR', { month: 'short' })
       .replace('.', '').replace(/^\w/, c => c.toUpperCase())
-
     const inMonth = transactions.filter(t => {
       const td = new Date(t.date)
       return td.getFullYear() === year && td.getMonth() === month
     })
-
-    bars.push({
+    return {
       label,
       income: inMonth.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0),
       expense: inMonth.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0),
-    })
-  }
-  return bars
+    }
+  })
 }
