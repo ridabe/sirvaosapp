@@ -1,9 +1,13 @@
 name: Build Android AAB
 
-# Secrets necessários no repositório GitHub:
-#   EXPO_TOKEN                        — token de acesso EAS (expo.dev → Account Settings → Access Tokens)
-#   EXPO_PUBLIC_SUPABASE_URL          — URL do projeto Supabase (ex: https://xxx.supabase.co)
-#   EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY — chave publishable do Supabase
+# Secrets necessários (Settings → Secrets and variables → Actions → New repository secret):
+#
+#   EXPO_PUBLIC_SUPABASE_URL              URL do projeto Supabase
+#   EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY  Chave publishable do Supabase
+#   ANDROID_KEYSTORE_BASE64               Keystore em base64  →  base64 -w0 sirvaos.keystore
+#   ANDROID_KEY_ALIAS                     Alias da chave dentro do keystore
+#   ANDROID_KEY_PASSWORD                  Senha da chave
+#   ANDROID_STORE_PASSWORD                Senha do keystore (storePassword)
 
 on:
   push:
@@ -21,28 +25,94 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Setup Expo / EAS
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Build Android AAB via EAS
-        run: eas build --platform android --profile production --non-interactive
+      # Gera o projeto Android nativo a partir do app.json
+      - name: Expo Prebuild
+        run: npx expo prebuild --platform android --clean --no-install
         env:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
 
-      - name: Resumo do build
+      # Decodifica o keystore e escreve em android/app/
+      - name: Decode keystore
         run: |
-          echo "✅ Build enviado para EAS. Acompanhe em:"
-          echo "https://expo.dev/accounts/ridabe_2026/projects/sirvaos-app/builds"
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/sirvaos.keystore
+
+      # Injeta as propriedades de signing no gradle.properties global
+      # O template Expo/RN lê MYAPP_UPLOAD_* automaticamente do build.gradle gerado
+      - name: Configurar signing no gradle.properties
+        run: |
+          mkdir -p ~/.gradle
+          cat >> ~/.gradle/gradle.properties << EOF
+          SIRVAOS_STORE_FILE=sirvaos.keystore
+          SIRVAOS_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}
+          SIRVAOS_STORE_PASSWORD=${{ secrets.ANDROID_STORE_PASSWORD }}
+          SIRVAOS_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}
+          EOF
+
+      # Injeta bloco de signingConfig no build.gradle gerado pelo prebuild
+      - name: Patch build.gradle — adicionar signingConfig release
+        run: |
+          python3 - << 'PYEOF'
+          import re, pathlib
+
+          path = pathlib.Path("android/app/build.gradle")
+          content = path.read_text()
+
+          signing_block = """
+              signingConfigs {
+                  release {
+                      storeFile file(SIRVAOS_STORE_FILE)
+                      storePassword SIRVAOS_STORE_PASSWORD
+                      keyAlias SIRVAOS_KEY_ALIAS
+                      keyPassword SIRVAOS_KEY_PASSWORD
+                  }
+              }
+          """
+
+          # Insere signingConfigs antes do bloco buildTypes
+          if "signingConfigs" not in content:
+              content = content.replace("    buildTypes {", signing_block + "    buildTypes {")
+
+          # Garante que o buildType release usa signingConfig.release
+          content = re.sub(
+              r'(release \{)(\s*)((?!.*signingConfig)[\s\S]*?)(^\s*\})',
+              lambda m: m.group(1) + m.group(2) + "            signingConfig signingConfigs.release\n" + m.group(3) + m.group(4),
+              content,
+              count=1,
+              flags=re.MULTILINE
+          )
+
+          path.write_text(content)
+          print("build.gradle atualizado com signingConfig release")
+          PYEOF
+
+      - name: Build AAB com Gradle
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease --no-daemon
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+
+      - name: Upload AAB como artefato do workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: sirvaos-release-v${{ github.run_number }}
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
