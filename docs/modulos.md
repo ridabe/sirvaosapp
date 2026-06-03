@@ -131,9 +131,42 @@ Gestão das iniciativas sociais da Primeira Igreja.
 
 ---
 
+---
+
+### 🙏 Ministério de Intercessão *(Módulo Web concluído — App em implementação)*
+
+Gestão das escalas de intercessão e pedidos de oração da Primeira Igreja.
+
+**Funcionalidades:**
+- Cadastro de torres de oração e turnos
+- Escalas de membros intercessores por torre e turno
+- Confirmação de presença no turno escalado
+- Submissão de pedidos de oração (qualquer membro pode enviar pelo app)
+- Aprovação e gestão de pedidos pelo admin do módulo (painel web)
+- Pedidos sigilosos: visíveis apenas ao admin e ao solicitante
+- Comunicados do ministério para os membros intercessores
+- Histórico de participação por membro
+
+**Quem usa:**
+- Adm. do Módulo: Líder/Coordenação do Ministério de Intercessão
+- Membros do ministério: Intercessores escalados (visualizam escalas, confirmam presença)
+- Membro comum: Apenas submissão de pedido de oração (sem acesso às escalas ou pedidos alheios)
+
+**Regras de acesso no app:**
+| Ação | Membro comum | Membro do ministério | Admin do módulo |
+|---|---|---|---|
+| Enviar pedido de oração | ✅ (pendente) | ✅ (pendente) | ✅ (aprovado direto) |
+| Ver próprio pedido | ✅ | ✅ | ✅ |
+| Ver pedidos de outros | ❌ | ❌ | ✅ |
+| Ver escalas de torre | ❌ | ✅ (próprias) | ✅ (todas) |
+| Confirmar presença | ❌ | ✅ | ✅ |
+| Gerenciar escalas/pedidos | ❌ | ❌ | ✅ (via painel web) |
+
+---
+
 ## Módulos da Fase 2 (Expansão)
 
-Após a implantação dos módulos prioritários, estes serão desenvolvidos na sequência:
+Após a implantação dos módulos prioritários e do módulo de Intercessão, estes serão desenvolvidos na sequência:
 
 | Ministério / Área | Descrição resumida |
 |---|---|
@@ -141,7 +174,6 @@ Após a implantação dos módulos prioritários, estes serão desenvolvidos na 
 | **Ministério Feminino** | Gestão de reuniões, eventos e escalas do ministério |
 | **Ministério Masculino** | Idem para o ministério masculino |
 | **Casais** | Gestão de encontros de casais, cadastro e agenda |
-| **Intercessão / Oração** | Escalas de oração, torres de intercessão, pedidos |
 | **Recepção / Acolhimento** | Controle de visitantes e equipe de recepção nos cultos |
 | **Comunicação** | Gestão de redes sociais, avisos, boletins e transmissões |
 | **Patrimônio** | Controle de bens, equipamentos e manutenção |

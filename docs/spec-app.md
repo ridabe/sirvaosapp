@@ -117,8 +117,14 @@ SirvaOSApp/
 │   │       │   └── index.tsx
 │   │       ├── escola-biblica/
 │   │       │   └── index.tsx
-│   │       └── acao-social/
-│   │           └── index.tsx
+│   │       ├── acao-social/
+│   │       │   └── index.tsx
+│   │       └── intercessao/
+│   │           ├── index.tsx          # Lista de escalas e pedidos ativos
+│   │           ├── pedido/
+│   │           │   ├── novo.tsx       # Submissão de pedido de oração
+│   │           │   └── [id].tsx       # Detalhe do pedido (solicitante ou admin)
+│   │           └── escala/[id].tsx    # Detalhe da torre de oração
 │   └── _layout.tsx             # Root layout com providers
 ├── components/                 # Componentes reutilizáveis
 │   ├── ui/                     # Componentes base (Button, Card, Badge, etc.)
@@ -326,6 +332,12 @@ module_ebd_materials       -- materiais da aula
 
 -- Comunicados gerais
 announcements              -- comunicados do tenant ou do módulo
+
+-- Intercessão
+module_intercession_prayer_requests  -- pedidos de oração (criado no web, lido/submetido no app)
+module_intercession_scales           -- escalas de torres de oração
+module_intercession_scale_members    -- membro escalado em uma torre com turno/horário
+module_intercession_confirmations    -- confirmação de presença na torre
 ```
 
 ---
@@ -350,7 +362,11 @@ announcements              -- comunicados do tenant ou do módulo
 /(app)/modulos/financeiro/  → Histórico financeiro
 /(app)/modulos/kids/        → Área kids para pais
 /(app)/modulos/escola-biblica/ → Área EBD
-/(app)/modulos/acao-social/ → Área voluntários
+/(app)/modulos/acao-social/             → Área voluntários
+/(app)/modulos/intercessao/            → Home do módulo Intercessão (membros do ministério)
+/(app)/modulos/intercessao/pedido/novo → Submissão de pedido de oração (qualquer membro)
+/(app)/modulos/intercessao/pedido/[id] → Detalhe do pedido (solicitante ou admin do módulo)
+/(app)/modulos/intercessao/escala/[id] → Detalhe da torre de oração
 ```
 
 ### Tab Navigator
@@ -546,6 +562,20 @@ jobs:
 - Configurações públicas do tenant (nome, cores, logo)
 - Comunicados direcionados ao membro ou ao tenant
 
+### Controle de acesso — Módulo Intercessão
+
+| Ação | Membro comum | Membro do ministério | Admin do módulo |
+|---|---|---|---|
+| Submeter pedido de oração | ✅ (status: pendente) | ✅ (status: pendente) | ✅ (aprovado direto) |
+| Ver próprio pedido | ✅ | ✅ | ✅ |
+| Ver pedidos de outros | ❌ | ❌ | ✅ |
+| Aprovar/rejeitar pedido | ❌ | ❌ | ✅ (web) |
+| Ver escalas de torre | ❌ | ✅ (próprias) | ✅ (todas) |
+| Confirmar presença em torre | ❌ | ✅ | ✅ |
+| Gerenciar escalas | ❌ | ❌ | ✅ (web) |
+
+A verificação de vínculo ao ministério é feita via RLS, consultando a tabela `module_member_links` (ou equivalente) filtrada pelo `module_slug = 'intercessao'`.
+
 ### O que o app não pode acessar
 - Dados de outros membros
 - Dados administrativos (tabelas sem policy para `member`)
@@ -637,6 +667,33 @@ type AppError = {
 - Lista de ministérios vinculados
 - Botão de edição básica
 - Link para política de privacidade / exportação de dados
+
+### Módulo Intercessão — Home (`/(app)/modulos/intercessao/`)
+- Header: nome do módulo + ícone de oração
+- Seção "Minhas torres" — escalas do membro com data/turno e badge de status (confirmado/pendente)
+- Botão flutuante "Enviar pedido de oração" (visível para qualquer membro autenticado)
+- Seção "Pedidos recentes" — pedidos enviados pelo próprio membro + pedidos aprovados visíveis ao ministério (se admin)
+- Card de comunicado do ministério (se houver)
+
+### Card de Torre de Oração (componente)
+- Data e turno (horário de início e fim)
+- Nome da torre/ação de intercessão
+- Badge de status da confirmação
+- Botão de confirmar presença inline
+
+### Formulário de Pedido de Oração (`/pedido/novo`)
+- Input: nome do solicitante (pré-preenchido com o membro)
+- Input: título/assunto do pedido
+- Textarea: descrição do pedido
+- Toggle: "Pedido sigiloso" (visível apenas ao admin do módulo, não listado para outros membros do ministério)
+- Botão "Enviar pedido"
+- Feedback de confirmação (status pendente de aprovação)
+
+### Detalhe do Pedido (`/pedido/[id]`)
+- Dados do pedido (assunto, descrição, data de envio)
+- Status (pendente / aprovado / respondido)
+- Exibido apenas ao solicitante e ao admin do módulo (RLS)
+- Admin: botões de aprovar / rejeitar / arquivar (redireciona ao painel web para ação completa)
 
 ---
 

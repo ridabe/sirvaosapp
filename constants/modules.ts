@@ -6,6 +6,7 @@ export type ModuleSlug =
   | 'kids'
   | 'escola-biblica'
   | 'acao-social'
+  | 'intercessao'
 
 export const MODULE_CONFIG: Record<ModuleSlug, { label: string; route: string; icon: string }> = {
   louvor: {
@@ -33,6 +34,11 @@ export const MODULE_CONFIG: Record<ModuleSlug, { label: string; route: string; i
     route: '/(app)/modulos/acao-social',
     icon: 'heart',
   },
+  intercessao: {
+    label: 'Intercessão',
+    route: '/(app)/modulos/intercessao',
+    icon: 'hand-right',
+  },
 }
 
 // Mapeia platform_modules.code (inglês) → rota e ícone do app
@@ -45,6 +51,7 @@ export type ModuleCode =
   | 'announcements'
   | 'events'
   | 'members'
+  | 'intercession'
 
 type ModuleRouteConfig = {
   routeSlug: string                             // nome da pasta em app/(app)/modulos/
@@ -78,6 +85,11 @@ export const MODULE_ROUTE_MAP: Partial<Record<string, ModuleRouteConfig>> = {
     routeSlug: 'membros',
     icon: 'people-outline',
     accentColor: '#0891B2',
+  },
+  intercession: {
+    routeSlug: 'intercessao',
+    icon: 'hand-right-outline',
+    accentColor: '#8B5CF6',
   },
   // social_action: não existe no sistema web — removido do MVP
 

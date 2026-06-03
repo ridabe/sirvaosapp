@@ -18,6 +18,8 @@ const ROUTE_TITLES: Record<string, string> = {
   '/modulos/kids': 'Kids',
   '/modulos/escola-biblica': 'Escola Bíblica',
   '/modulos/acao-social': 'Ação Social',
+  '/modulos/intercessao': 'Intercessão',
+  '/modulos/intercessao/pedido/novo': 'Pedido de Oração',
 }
 
 export default function AppLayout() {

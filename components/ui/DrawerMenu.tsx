@@ -25,6 +25,7 @@ const STATIC_SECTIONS = {
   principal: [
     { label: 'Início', route: '/(app)/', icon: 'home-outline' as keyof typeof Ionicons.glyphMap },
     { label: 'Notificações', route: '/(app)/notificacoes', icon: 'notifications-outline' as keyof typeof Ionicons.glyphMap },
+    { label: 'Pedido de Oração', route: '/(app)/modulos/intercessao/pedido/novo', icon: 'hand-right-outline' as keyof typeof Ionicons.glyphMap },
   ],
   conta: [
     { label: 'Meu Perfil', route: '/(app)/perfil', icon: 'person-outline' as keyof typeof Ionicons.glyphMap },

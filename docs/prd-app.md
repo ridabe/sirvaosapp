@@ -127,6 +127,23 @@ Cada módulo exibe uma área específica com o que é relevante para aquele memb
 - Confirmação de presença
 - Histórico de participação
 
+#### Intercessão
+
+Disponível apenas para membros do Ministério de Intercessão e admins do módulo.
+
+- **Lista de pedidos de oração** — pedidos ativos enviados via sistema web, organizados por data
+- **Submissão de pedido** — membro envia pedido de oração diretamente pelo app
+- **Escalas de intercessão** — visualização das torres/turnos de oração nos quais o membro está escalado
+- **Confirmação de presença** — confirmar participação na torre de oração
+- **Histórico pessoal** — torres participadas e pedidos registrados pelo membro
+- **Comunicados do ministério** — avisos e convocações da liderança de intercessão
+
+> **Regras de acesso:**
+> - Pedidos de oração e escalas: visíveis apenas a membros vinculados ao ministério de intercessão
+> - Submissão de pedido: qualquer membro autenticado pode enviar (pedido fica pendente até aprovação pelo admin do módulo)
+> - Histórico e detalhes de pedidos alheios: visível apenas ao admin do módulo e ao próprio solicitante
+> - Gestão de escalas e aprovação de pedidos: exclusivo ao admin do módulo (via painel web; não editável pelo app)
+
 ### 6.4 Notificações Push
 
 - Notificação de nova escala publicada
@@ -134,6 +151,9 @@ Cada módulo exibe uma área específica com o que é relevante para aquele memb
 - Comunicado novo do ministério
 - Comunicado geral da igreja
 - Solicitação de confirmação de presença
+- **Intercessão:** novo pedido de oração submetido (notifica admins do módulo)
+- **Intercessão:** pedido de oração aprovado (notifica solicitante)
+- **Intercessão:** escala de torre publicada (notifica membros escalados)
 
 ### 6.5 Perfil do Membro
 
@@ -268,8 +288,53 @@ O sistema de temas do app deve suportar futuramente a customização por tenant 
 | Fase | Escopo | Prazo estimado |
 |---|---|---|
 | **MVP** | Auth, home, módulos prioritários (Louvor, Financeiro, Kids, Escola Bíblica), notificações, perfil | Fase atual |
-| **Fase 2** | Módulos de expansão, white-label por tenant, modo offline aprimorado | Após validação do MVP |
+| **Fase 2 — Intercessão** | Módulo de Intercessão no app (pedidos de oração, escalas de torre, submissão de pedido, notificações específicas); controle de acesso por vínculo ao ministério | Após MVP |
+| **Fase 2 — Expansão** | Demais módulos de expansão (Jovens, Feminino, Masculino, Casais), white-label por tenant, modo offline aprimorado | Após validação do MVP |
 | **Fase 3** | iOS, check-in QR Code, relatórios visuais, biblioteca de materiais | Longo prazo |
+
+### Etapas de Implementação — Módulo Intercessão (App)
+
+#### Etapa 1 — Backend e RLS
+- [ ] Verificar/criar tabelas: `module_intercession_prayer_requests`, `module_intercession_scales`, `module_intercession_scale_members`, `module_intercession_confirmations`
+- [ ] Criar policies RLS para membro comum (apenas próprios pedidos), membro do ministério (escalas próprias + pedidos aprovados) e admin do módulo (acesso total)
+- [ ] Criar/validar função/view para verificar vínculo do membro ao ministério de intercessão (`module_member_links` com `module_slug = 'intercessao'`)
+- [ ] Testar isolamento: membro comum não acessa escalas nem pedidos alheios
+
+#### Etapa 2 — Tipagem e Hooks
+- [ ] Gerar/atualizar tipos TypeScript (`types/database.ts`) com as novas tabelas do módulo
+- [ ] Criar `hooks/useIntercession.ts` com:
+  - `usePrayerRequests()` — lista pedidos do membro autenticado
+  - `useIntercessionScales()` — escalas do membro no ministério
+  - `useSubmitPrayerRequest()` — mutation para envio de pedido
+  - `useConfirmIntercessionPresence()` — mutation para confirmação de torre
+
+#### Etapa 3 — Telas
+- [ ] `app/(app)/modulos/intercessao/index.tsx` — home do módulo com escalas e pedidos
+- [ ] `app/(app)/modulos/intercessao/pedido/novo.tsx` — formulário de submissão de pedido
+- [ ] `app/(app)/modulos/intercessao/pedido/[id].tsx` — detalhe do pedido (solicitante ou admin)
+- [ ] `app/(app)/modulos/intercessao/escala/[id].tsx` — detalhe da torre de oração com confirmação
+
+#### Etapa 4 — Componentes
+- [ ] `components/modules/intercessao/TowerCard.tsx` — card de torre com badge de status e botão de confirmação inline
+- [ ] `components/modules/intercessao/PrayerRequestCard.tsx` — card do pedido de oração com status
+- [ ] `components/modules/intercessao/PrayerRequestForm.tsx` — formulário reutilizável de submissão
+
+#### Etapa 5 — Notificações
+- [ ] Trigger/Edge Function: admin recebe push ao chegar novo pedido pendente
+- [ ] Trigger/Edge Function: solicitante recebe push ao pedido ser aprovado
+- [ ] Trigger/Edge Function: membro escalado recebe push ao publicar nova torre
+- [ ] Lembrete: membro escalado em torre recebe push 24h antes do turno
+
+#### Etapa 6 — Integração na Home e Navegação
+- [ ] Card do módulo Intercessão na home (exibido apenas para membros do ministério)
+- [ ] Botão "Enviar pedido de oração" acessível a qualquer membro autenticado (via home ou perfil)
+- [ ] Rota `/(app)/modulos/intercessao/` protegida para membros do ministério; rota `/pedido/novo` aberta a todos os membros
+
+#### Etapa 7 — QA e Validação
+- [ ] Testar fluxo completo de membro comum: submeter pedido → receber confirmação de status pendente
+- [ ] Testar fluxo de membro do ministério: ver escalas → confirmar presença → não ver pedidos alheios
+- [ ] Testar que admin do módulo vê todos os pedidos e escalas
+- [ ] Testar notificações push em cada gatilho
 
 ---
 

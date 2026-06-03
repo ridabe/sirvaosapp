@@ -14,6 +14,7 @@ import { getModuleRoute } from '@/constants/modules'
 import { colors } from '@/constants/colors'
 import { spacing, fontSize, radius } from '@/lib/theme'
 import { useState, useCallback } from 'react'
+import { useMyPrayerRequests, MyPrayerRequest } from '@/hooks/useMyPrayerRequests'
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
   culto: 'Culto',
@@ -60,13 +61,14 @@ export default function HomeScreen() {
   )
   const { events, loading: eventsLoading, error: eventsError, refetch: refetchEvents } = useEvents()
   const { announcements, loading: announcementsLoading, error: announcementsError, refetch: refetchAnnouncements } = useAnnouncements()
+  const { requests: prayerRequests, refetch: refetchPrayer } = useMyPrayerRequests()
   const [refreshing, setRefreshing] = useState(false)
 
   const isOffline = modulesError === 'offline' || eventsError === 'offline' || announcementsError === 'offline'
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true)
-    await Promise.all([refetchMember(), refetchModules(), refetchEvents(), refetchAnnouncements()])
+    await Promise.all([refetchMember(), refetchModules(), refetchEvents(), refetchAnnouncements(), refetchPrayer()])
     setRefreshing(false)
   }, [refetchMember, refetchModules, refetchEvents, refetchAnnouncements])
 
@@ -193,6 +195,45 @@ export default function HomeScreen() {
               )
             })}
           </View>
+        </View>
+      )}
+
+      {/* Oração — visível para todos os membros */}
+      {!memberLoading && (
+        <View style={styles.section}>
+          <SectionHeader title="Oração" icon="hand-right-outline" />
+
+          {/* Botão enviar */}
+          <TouchableOpacity
+            style={styles.prayerCard}
+            onPress={() => router.push('/(app)/modulos/intercessao/pedido/novo' as any)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.prayerIconWrap}>
+              <Ionicons name="add-circle-outline" size={28} color="#8B5CF6" />
+            </View>
+            <View style={styles.prayerInfo}>
+              <Text style={styles.prayerTitle}>Enviar pedido de oração</Text>
+              <Text style={styles.prayerDesc}>
+                Compartilhe um pedido com o ministério de intercessão da igreja.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.neutral[300]} />
+          </TouchableOpacity>
+
+          {/* Pedidos já enviados com status */}
+          {prayerRequests.length > 0 && (
+            <View style={styles.prayerRequestsList}>
+              <Text style={styles.prayerRequestsLabel}>Meus pedidos</Text>
+              {prayerRequests.map(req => (
+                <PrayerRequestRow
+                  key={req.id}
+                  request={req}
+                  onPress={() => router.push(`/(app)/modulos/intercessao/pedido/${req.id}` as any)}
+                />
+              ))}
+            </View>
+          )}
         </View>
       )}
 
@@ -381,6 +422,25 @@ function EmptyState({ icon, message, muted }: {
   )
 }
 
+const PRAYER_STATUS: Record<string, { label: string; color: string }> = {
+  new:         { label: 'Aguardando um intercessor',             color: '#3578A8' },
+  assigned:    { label: 'O intercessor já está com seu pedido',  color: '#e08b00' },
+  interceding: { label: 'Alguém está orando por você agora',     color: '#c07000' },
+  done:        { label: 'Seu pedido foi intercedido 🙏',          color: '#2F8A5F' },
+}
+
+function PrayerRequestRow({ request: r, onPress }: { request: MyPrayerRequest; onPress: () => void }) {
+  const s = PRAYER_STATUS[r.status] ?? PRAYER_STATUS.new
+  return (
+    <TouchableOpacity style={styles.prayerRow} onPress={onPress} activeOpacity={0.8}>
+      <Text style={styles.prayerRowContent} numberOfLines={1}>{r.content}</Text>
+      <View style={[styles.prayerRowBadge, { backgroundColor: s.color + '18' }]}>
+        <Text style={[styles.prayerRowBadgeText, { color: s.color }]}>{s.label}</Text>
+      </View>
+    </TouchableOpacity>
+  )
+}
+
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <View style={styles.errorState}>
@@ -503,6 +563,54 @@ const styles = StyleSheet.create({
   },
   adminCardTitle: { fontSize: fontSize.md, fontWeight: '600', color: colors.neutral[950] },
   adminCardSub: { fontSize: fontSize.xs, color: colors.neutral[500], marginTop: 1 },
+
+  // Pedidos de oração
+  prayerRequestsList: { marginTop: spacing.sm, gap: spacing.xs },
+  prayerRequestsLabel: {
+    fontSize: fontSize.xs, fontWeight: '700', color: colors.neutral[500],
+    textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2,
+  },
+  prayerRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    backgroundColor: colors.neutral.white,
+    borderWidth: 1, borderColor: colors.neutral[100],
+    borderRadius: radius.md, padding: spacing.md,
+  },
+  prayerRowContent: { flex: 1, fontSize: fontSize.sm, color: colors.neutral[800] },
+  prayerRowBadge: {
+    paddingHorizontal: spacing.sm, paddingVertical: 3,
+    borderRadius: radius.sm, flexShrink: 0,
+  },
+  prayerRowBadgeText: { fontSize: 11, fontWeight: '700' },
+
+  // Envio de pedido
+  prayerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.neutral.white,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: '#EDE9FE',
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  prayerIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.lg,
+    backgroundColor: '#EDE9FE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  prayerInfo: { flex: 1 },
+  prayerTitle: { fontSize: fontSize.md, fontWeight: '700', color: colors.neutral[950] },
+  prayerDesc: { fontSize: fontSize.xs, color: colors.neutral[500], marginTop: 2, lineHeight: 18 },
 
   // Eventos
   eventsScroll: { marginHorizontal: -spacing.lg, paddingHorizontal: spacing.lg },

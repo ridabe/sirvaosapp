@@ -23,7 +23,7 @@ const ADMIN_ONLY_CODES = new Set(['financial', 'members'])
 
 // Módulos que aparecem para admin OU para membro/participante do ministério
 // A verificação de membership vem de tabelas específicas por módulo
-const MEMBER_ACCESS_CODES = new Set(['worship', 'kids', 'bible-school'])
+const MEMBER_ACCESS_CODES = new Set(['worship', 'kids', 'bible-school', 'intercession'])
 
 export function useModules(tenantId: string | null | undefined) {
   const [modules, setModules] = useState<AppModule[]>([])
@@ -90,7 +90,7 @@ export function useModules(tenantId: string | null | undefined) {
       }
 
       // 3. Checks em paralelo
-      const [adminRows, worshipRows, bibleRows, kidsRows] = await Promise.all([
+      const [adminRows, worshipRows, bibleRows, kidsRows, intercessionRows] = await Promise.all([
         // Admin de módulo
         (supabase as any)
           .from('tenant_module_admins')
@@ -117,12 +117,20 @@ export function useModules(tenantId: string | null | undefined) {
           .select('id')
           .eq('member_id', memberId)
           .limit(1),
+
+        // Membro do ministério de intercessão (tem qualquer pedido designado)
+        (supabase as any)
+          .from('prayer_assignments')
+          .select('id')
+          .eq('assigned_member_id', memberId)
+          .limit(1),
       ])
 
       const adminModuleIds = new Set((adminRows.data ?? []).map((r: any) => r.module_id))
       const isWorshipMember = (worshipRows.data ?? []).length > 0
       const isBibleStudent = (bibleRows.data ?? []).length > 0
       const isKidsGuardian = (kidsRows.data ?? []).length > 0
+      const isIntercessionMember = (intercessionRows.data ?? []).length > 0
 
       // 4. Aplica regras por módulo
       const result = allModules
@@ -133,6 +141,7 @@ export function useModules(tenantId: string | null | undefined) {
           if (m.slug === 'worship') isMember = isWorshipMember
           else if (m.slug === 'bible-school') isMember = isBibleStudent
           else if (m.slug === 'kids') isMember = isKidsGuardian
+          else if (m.slug === 'intercession') isMember = isIntercessionMember
 
           const hasAccess = isAdmin || isMember
           return { ...m, isAdmin, isMember, hasAccess }

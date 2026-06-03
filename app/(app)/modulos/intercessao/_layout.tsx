@@ -1,0 +1,11 @@
+import { Stack } from 'expo-router'
+
+export default function IntercessaoLayout() {
+  return (
+    <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+      <Stack.Screen name="index" />
+      <Stack.Screen name="pedido/novo" />
+      <Stack.Screen name="pedido/[id]" />
+    </Stack>
+  )
+}
