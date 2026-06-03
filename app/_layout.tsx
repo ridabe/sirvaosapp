@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { View, StyleSheet } from 'react-native'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
@@ -10,38 +11,27 @@ import { InAppNotificationBanner } from '@/components/ui/InAppNotificationBanner
 
 SplashScreen.preventAutoHideAsync()
 
-function AppSetup() {
-  const { profile } = useAuth()
+function RootLayoutNav() {
+  const { session, loading } = useAuth()
   const { checkForUpdate } = useAppUpdate()
   const { refetch: refetchNotifications } = useNotifications()
+  const segments = useSegments()
+  const router = useRouter()
   const [inAppNotif, setInAppNotif] = useState<InAppNotification | null>(null)
+
+  const { profile } = useAuth()
 
   usePushNotifications({
     profileId: profile?.id,
     onInAppNotification: (n) => {
       setInAppNotif(n)
-      // Garante que a lista de notificações atualiza mesmo se o Realtime falhar
       refetchNotifications()
     },
   })
 
-  // Verifica atualização assim que o perfil carregar
   useEffect(() => {
     if (profile?.id) checkForUpdate()
   }, [profile?.id])
-
-  return (
-    <InAppNotificationBanner
-      notification={inAppNotif}
-      onDismiss={() => setInAppNotif(null)}
-    />
-  )
-}
-
-function RootLayoutNav() {
-  const { session, loading } = useAuth()
-  const segments = useSegments()
-  const router = useRouter()
 
   useEffect(() => {
     if (loading) return
@@ -55,10 +45,14 @@ function RootLayoutNav() {
   }, [session, loading])
 
   return (
-    <>
-      <AppSetup />
+    // View raiz garante que o banner absolute fica acima do Stack (native screens)
+    <View style={styles.root}>
       <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
-    </>
+      <InAppNotificationBanner
+        notification={inAppNotif}
+        onDismiss={() => setInAppNotif(null)}
+      />
+    </View>
   )
 }
 
@@ -72,3 +66,9 @@ export default function RootLayout() {
     </AuthProvider>
   )
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+})
