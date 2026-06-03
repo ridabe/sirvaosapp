@@ -17,23 +17,37 @@ Notifications.setNotificationHandler({
 })
 
 async function registerForPushNotifications(): Promise<string | null> {
+  const appOwnership = Constants.appOwnership
+  console.log('[Push] appOwnership:', appOwnership)
+  console.log('[Push] isDevice:', Device.isDevice)
+
   // Push não funciona no Expo Go a partir do SDK 53 — requer development build
-  if (Constants.appOwnership === 'expo') {
-    console.log('[Push] Expo Go detectado — push desabilitado. Use um development build.')
+  if (appOwnership === 'expo') {
+    console.warn('[Push] Expo Go detectado — push desabilitado. Use um development build.')
     return null
   }
 
-  if (!Device.isDevice) return null
+  if (!Device.isDevice) {
+    console.warn('[Push] Emulador detectado — push não funciona em emuladores.')
+    return null
+  }
 
   const { status: existing } = await Notifications.getPermissionsAsync()
+  console.log('[Push] Status de permissão atual:', existing)
+
   let finalStatus = existing
 
   if (existing !== 'granted') {
+    console.log('[Push] Solicitando permissão...')
     const { status } = await Notifications.requestPermissionsAsync()
     finalStatus = status
+    console.log('[Push] Status após solicitação:', status)
   }
 
-  if (finalStatus !== 'granted') return null
+  if (finalStatus !== 'granted') {
+    console.warn('[Push] Permissão negada. Status final:', finalStatus)
+    return null
+  }
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
@@ -46,24 +60,45 @@ async function registerForPushNotifications(): Promise<string | null> {
 
   try {
     const projectId = Constants.expoConfig?.extra?.eas?.projectId
+    console.log('[Push] projectId:', projectId)
+
+    if (!projectId) {
+      console.error('[Push] projectId não encontrado em Constants.expoConfig.extra.eas.projectId')
+    }
+
     const token = await Notifications.getExpoPushTokenAsync(
       projectId ? { projectId } : undefined
     )
+    console.log('[Push] Token obtido com sucesso:', token.data)
     return token.data
   } catch (e) {
-    console.warn('[Push] Não foi possível obter token:', e)
+    console.error('[Push] Erro ao obter token:', e)
     return null
   }
 }
 
 async function saveToken(profileId: string, token: string) {
   const platform = Platform.OS === 'ios' ? 'ios' : 'android'
-  await (supabase as any)
+  console.log('[Push] Salvando token no banco para profile:', profileId)
+
+  const { error } = await (supabase as any)
     .from('push_tokens')
     .upsert(
-      { profile_id: profileId, token, platform, active: true, updated_at: new Date().toISOString() },
+      {
+        profile_id: profileId,
+        token,
+        platform,
+        active: true,
+        updated_at: new Date().toISOString(),
+      },
       { onConflict: 'profile_id,token' }
     )
+
+  if (error) {
+    console.error('[Push] Erro ao salvar token no banco:', JSON.stringify(error))
+  } else {
+    console.log('[Push] Token salvo com sucesso no banco.')
+  }
 }
 
 type Options = {
@@ -77,18 +112,28 @@ export function usePushNotifications({ profileId, onNotification }: Options) {
   const notificationListener = useRef<Notifications.EventSubscription | null>(null)
 
   useEffect(() => {
-    if (!profileId) return
+    console.log('[Push] useEffect disparado, profileId:', profileId)
+    if (!profileId) {
+      console.log('[Push] profileId ainda não disponível, aguardando...')
+      return
+    }
 
     registerForPushNotifications().then(token => {
-      if (token) saveToken(profileId, token)
+      if (token) {
+        saveToken(profileId, token)
+      } else {
+        console.warn('[Push] Nenhum token obtido — registro não realizado.')
+      }
     })
 
     notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+      console.log('[Push] Notificação recebida em foreground:', notification.request.content.title)
       onNotification?.(notification)
     })
 
     responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
       const data = response.notification.request.content.data as Record<string, string> | undefined
+      console.log('[Push] Notificação tocada, data:', data)
       if (data?.route) {
         router.push(data.route as any)
       } else {

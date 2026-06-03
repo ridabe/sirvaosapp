@@ -79,11 +79,7 @@ export const MODULE_ROUTE_MAP: Partial<Record<string, ModuleRouteConfig>> = {
     icon: 'people-outline',
     accentColor: '#0891B2',
   },
-  social_action: {
-    routeSlug: 'acao-social',
-    icon: 'heart-outline',
-    accentColor: '#DC2626',
-  },
+  // social_action: não existe no sistema web — removido do MVP
 
   // Funcionalidades gerais do app
   announcements: {

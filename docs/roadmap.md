@@ -188,46 +188,37 @@ Lembrando que os usuarios so terao acesso aos modulos basicos do sistema e aos m
 
 ---
 
-## Etapa 7 — Módulos Financeiro, Kids, Escola Bíblica e Ação Social
+## Etapa 7 — Módulos Financeiro, Kids e Escola Bíblica ✅ CONCLUÍDA
 
 **Objetivo:** Completar os módulos do MVP com as funcionalidades de leitura e interação básica.
 
-### Dependências
-- Etapa 6 concluída
-- Migrations das tabelas de cada módulo no banco
+> **Nota:** Módulo "Ação Social" removido do escopo — não existe no sistema web.
 
 ### Módulo Financeiro
-- [ ] Tabela `module_finance_contributions` (migration + RLS)
-- [ ] Tela com histórico de dízimos e ofertas do membro
-- [ ] Card de contribuição: data, valor, tipo
-- [ ] Download/visualização de comprovante
+- [x] Policy RLS: membro lê próprias transações (`member_id = current_member_id()`)
+- [x] Hook `useFinancial` — transações com categoria, total acumulado
+- [x] Tela `/modulos/financeiro` — card de total + lista de contribuições (dízimo, oferta, doação)
 
 ### Módulo Kids
-- [ ] Tabelas `module_kids_children`, `module_kids_events`, `module_kids_announcements`
-- [ ] Tela para pais: crianças vinculadas + próximos eventos do Kids
-- [ ] Feed de comunicados do Kids
-- [ ] Card de criança com nome, turma e frequência
+- [x] Policies RLS: responsável lê filhos, grupos, frequência, comunicados e atividades
+- [x] Hook `useKids` — filhos via `kids_guardians`, frequência últimas 12 semanas, comunicados
+- [x] Tela `/modulos/kids` — cards dos filhos (turma, idade, frequência, alertas de alergia/necessidades especiais) + feed de comunicados
 
 ### Módulo Escola Bíblica
-- [ ] Tabelas `module_ebd_classes`, `module_ebd_attendance`, `module_ebd_materials`
-- [ ] Tela com turma, professor, frequência pessoal
-- [ ] Lista de materiais da aula (links/documentos)
-
-### Módulo Ação Social
-- [ ] Tela com próximas escalas de voluntariado
-- [ ] Confirmação de presença no voluntariado
-- [ ] Histórico de participação
+- [x] Hook `useBibleSchool` — matrículas, sessões, frequência e materiais por turma
+- [x] Tela `/modulos/escola-biblica` — card por turma com barra de frequência, aulas recentes com ícone de presença, materiais clicáveis
 
 ### Critérios de conclusão
-- Cada módulo exibe dados reais do banco
-- Apenas membros vinculados ao módulo acessam a tela
-- Dados de um módulo não vazam para outro
+- [x] Cada módulo exibe dados reais do banco
+- [x] Apenas membros vinculados ao módulo acessam a tela
+- [x] Dados de um módulo não vazam para outro
 
 ---
 
 ## Etapa 8 — Versionamento, Polimento, Testes e Build de Produção
 
 **Objetivo:** App pronto para distribuição interna, com sistema de atualização forçada/sugerida já funcionando antes do primeiro deploy na Play Store.
+Criar todas as telas, descrições e suporte para inciar o envio das configurações na play console, ja estarei logado para que seja feita essa configuraçao incluindo as telas de apresnetao para celular e tablet, logos, descrições
 
 ---
 
