@@ -18,7 +18,13 @@ export function AppHeader({ title, onMenuPress }: Props) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <TouchableOpacity onPress={onMenuPress} style={styles.btn} activeOpacity={0.7}>
+      <TouchableOpacity
+        onPress={onMenuPress}
+        style={styles.btn}
+        activeOpacity={0.7}
+        accessibilityLabel="Abrir menu"
+        accessibilityRole="button"
+      >
         <Ionicons name="menu" size={26} color="#fff" />
       </TouchableOpacity>
 
@@ -28,6 +34,8 @@ export function AppHeader({ title, onMenuPress }: Props) {
         onPress={() => router.push('/(app)/notificacoes')}
         style={styles.btn}
         activeOpacity={0.7}
+        accessibilityLabel={unreadCount > 0 ? `Notificações, ${unreadCount} não lida${unreadCount > 1 ? 's' : ''}` : 'Notificações'}
+        accessibilityRole="button"
       >
         <Ionicons name="notifications-outline" size={24} color="#fff" />
         {unreadCount > 0 && (
@@ -50,8 +58,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   btn: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },

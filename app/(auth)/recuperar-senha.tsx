@@ -35,7 +35,7 @@ export default function RecuperarSenhaScreen() {
         bounces={false}
       >
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} accessibilityLabel="Voltar" accessibilityRole="button">
             <Ionicons name="arrow-back" size={22} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Recuperar senha</Text>
@@ -86,7 +86,7 @@ export default function RecuperarSenhaScreen() {
 
               <Button label="Enviar instruções" onPress={handleSubmit} loading={loading} />
 
-              <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
+              <TouchableOpacity style={styles.backLink} onPress={() => router.back()} accessibilityLabel="Lembrou a senha? Voltar para o login" accessibilityRole="link">
                 <Text style={common.smallText}>
                   Lembrou a senha?{' '}
                   <Text style={common.link}>Voltar</Text>

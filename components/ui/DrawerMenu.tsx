@@ -111,7 +111,12 @@ export function DrawerMenu({ onClose }: Props) {
             {profile?.email ?? ''}
           </Text>
         </View>
-        <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+        <TouchableOpacity
+          onPress={onClose}
+          style={styles.closeBtn}
+          accessibilityLabel="Fechar menu"
+          accessibilityRole="button"
+        >
           <Ionicons name="close" size={22} color={colors.neutral[500]} />
         </TouchableOpacity>
       </View>
@@ -159,6 +164,9 @@ export function DrawerMenu({ onClose }: Props) {
                       style={[styles.item, active && styles.itemActive]}
                       onPress={() => navigate(item.route)}
                       activeOpacity={0.7}
+                      accessibilityLabel={item.label}
+                      accessibilityRole="menuitem"
+                      accessibilityState={{ selected: active }}
                     >
                       <Ionicons name={item.icon} size={20} color={active ? colors.brand.primary : colors.neutral[500]} />
                       <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>{item.label}</Text>
@@ -182,6 +190,8 @@ export function DrawerMenu({ onClose }: Props) {
           onPress={handleSignOut}
           disabled={signingOut}
           activeOpacity={0.7}
+          accessibilityLabel="Sair da conta"
+          accessibilityRole="button"
         >
           <Ionicons name="log-out-outline" size={20} color={colors.semantic.danger} />
           <Text style={styles.signOutText}>
@@ -238,7 +248,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   closeBtn: {
-    padding: spacing.xs,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   divider: {
     height: 1,
@@ -355,6 +368,9 @@ function NavSection({
               style={[styles.item, active && styles.itemActive]}
               onPress={() => onNavigate(item.route)}
               activeOpacity={0.7}
+              accessibilityLabel={item.label}
+              accessibilityRole="menuitem"
+              accessibilityState={{ selected: active }}
             >
               <Ionicons name={item.icon} size={20} color={active ? colors.brand.primary : colors.neutral[500]} />
               <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>{item.label}</Text>

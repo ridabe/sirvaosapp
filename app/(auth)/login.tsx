@@ -151,6 +151,8 @@ export default function LoginScreen() {
           <TouchableOpacity
             onPress={() => router.push('/(auth)/recuperar-senha')}
             style={styles.forgotWrapper}
+            accessibilityLabel="Esqueci minha senha"
+            accessibilityRole="link"
           >
             <Text style={common.link}>Esqueci minha senha</Text>
           </TouchableOpacity>
@@ -158,7 +160,12 @@ export default function LoginScreen() {
           <Button label="Entrar" onPress={handleLogin} loading={loading} style={styles.btnLogin} />
 
           {biometricAvailable && (
-            <TouchableOpacity style={styles.biometricBtn} onPress={handleBiometric}>
+            <TouchableOpacity
+              style={styles.biometricBtn}
+              onPress={handleBiometric}
+              accessibilityLabel="Entrar com biometria"
+              accessibilityRole="button"
+            >
               <Ionicons name="finger-print" size={28} color={colors.brand.primary} />
               <Text style={styles.biometricText}>Entrar com biometria</Text>
             </TouchableOpacity>

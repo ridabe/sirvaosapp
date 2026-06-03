@@ -103,7 +103,7 @@ export default function PrimeiroAcessoScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} accessibilityLabel="Voltar" accessibilityRole="button">
             <Ionicons name="arrow-back" size={22} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Primeiro acesso</Text>
@@ -203,7 +203,7 @@ export default function PrimeiroAcessoScreen() {
             </>
           )}
 
-          <TouchableOpacity style={styles.loginLink} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.loginLink} onPress={() => router.back()} accessibilityLabel="Já tem acesso? Entrar" accessibilityRole="link">
             <Text style={common.smallText}>
               Já tem acesso?{' '}
               <Text style={common.link}>Entrar</Text>
