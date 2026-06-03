@@ -18,9 +18,9 @@ ios/
 # EAS
 .eas/
 
-# Firebase — contém chaves sensíveis, não commitar
-google-services.json
+# GoogleService-Info.plist (iOS) — não commitado
 GoogleService-Info.plist
+# google-services.json é seguro para commitar (não contém chaves privadas)
 
 # OS
 .DS_Store

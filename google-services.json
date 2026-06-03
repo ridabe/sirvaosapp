@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1057743768327",
+    "project_id": "sirvaos",
+    "storage_bucket": "sirvaos.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1057743768327:android:2577b6c1b9c739d94513a2",
+        "android_client_info": {
+          "package_name": "com.sirvaos.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAyv7DSAwdzRsgdQedMAjjHm4KrAWdg5c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
