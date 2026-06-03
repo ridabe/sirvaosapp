@@ -1,9 +1,14 @@
 name: Build Android AAB
 
+# Secrets necessários no repositório GitHub:
+#   EXPO_TOKEN                        — token de acesso EAS (expo.dev → Account Settings → Access Tokens)
+#   EXPO_PUBLIC_SUPABASE_URL          — URL do projeto Supabase (ex: https://xxx.supabase.co)
+#   EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY — chave publishable do Supabase
+
 on:
   push:
     branches:
-      - main
+      - master
       - 'release/**'
   workflow_dispatch:
 
@@ -25,19 +30,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Setup Expo
+      - name: Setup Expo / EAS
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Build Android AAB
+      - name: Build Android AAB via EAS
         run: eas build --platform android --profile production --non-interactive
         env:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
 
-      - name: Get build URL
+      - name: Resumo do build
         run: |
-          echo "Build concluído. Acesse o painel EAS para baixar o AAB:"
-          echo "https://expo.dev/accounts/[sua-conta]/projects/sirvaos-app/builds"
+          echo "✅ Build enviado para EAS. Acompanhe em:"
+          echo "https://expo.dev/accounts/ridabe_2026/projects/sirvaos-app/builds"

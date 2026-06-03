@@ -18,6 +18,9 @@ ios/
 # EAS
 .eas/
 
+# Chave de serviço do Google Play (credencial privada para eas submit)
+google-play-key.json
+
 # GoogleService-Info.plist (iOS) — não commitado
 GoogleService-Info.plist
 # google-services.json é seguro para commitar (não contém chaves privadas)
