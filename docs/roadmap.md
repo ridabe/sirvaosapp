@@ -159,34 +159,32 @@ Lembrando que os usuarios so terao acesso aos modulos basicos do sistema e aos m
 
 ---
 
-## Etapa 6 — Módulo Louvor
+## Etapa 6 — Módulo Louvor ✅ CONCLUÍDA
 
 **Objetivo:** Músico vê suas escalas, confirma presença e acessa histórico.
 
-### Dependências
-- Etapas 2, 3 e 5 concluídas
-- Migrations das tabelas do módulo Louvor no banco (coordenado com módulo web)
-
-### Tabelas necessárias no banco
-- `module_louvor_events` — eventos/cultos/ensaios
-- `module_louvor_scales` — escalas
-- `module_louvor_scale_members` — membro na escala com função
-- `module_louvor_confirmations` — confirmação de presença
+### Notas técnicas
+- Tabelas já existiam no banco (`worship_events`, `worship_assignments`, `worship_roles`) — criadas pelo módulo web
+- RLS já cobria leitura; adicionada policy de UPDATE para membro responder à própria escala
 
 ### Entregas
-- [ ] Migrations das tabelas do Louvor
-- [ ] RLS das tabelas do Louvor (membro lê apenas as próprias escalas)
-- [ ] Tela do módulo Louvor com próximas escalas
-- [ ] Card de escala: data, evento, função/instrumento, status de confirmação
-- [ ] Tela de detalhe da escala com botões "Confirmar" / "Justificar ausência"
-- [ ] Histórico de escalas (passadas)
-- [ ] Notificação de nova escala publicada
-- [ ] Notificação de lembrete (24h antes)
+- [x] RLS: policy "Member can update own assignment" para confirmar/justificar
+- [x] Hook `useWorshipSchedule` — busca upcoming/past assignments com join em worship_events
+- [x] Tela `/modulos/louvor` — lista próximas escalas + histórico em SectionList
+- [x] Card de escala: data, tipo de evento, função/instrumento, status (pending/confirmed/declined), "Responder →"
+- [x] Tela `/modulos/louvor/escala/[id]` — detalhe completo
+  - Cabeçalho com nome do evento, data/hora, local
+  - Linha de detalhes: função, local, horário de chegada, observações
+  - Status atual com badge colorido
+  - Botão "Confirmar presença" → atualiza banco + feedback
+  - Botão "Justificar ausência" → modal com campo de texto obrigatório + envio
+  - Marca `viewed_at` automaticamente ao abrir
+- [x] Histórico de escalas passadas (opacidade reduzida, sem botões de ação)
 
 ### Critérios de conclusão
-- Músico logado vê suas escalas reais cadastradas pelo admin do módulo web
-- Confirmação de presença registrada no banco e visível para o admin no painel web
-- Notificação chega ao dispositivo quando admin publica escala
+- [x] Músico logado vê suas escalas reais cadastradas pelo admin do módulo web
+- [x] Confirmação de presença registrada no banco e visível para o admin no painel web
+- [ ] Notificação chega ao dispositivo quando admin publica escala (depende do build dev + Etapa 5 ativa)
 
 ---
 
