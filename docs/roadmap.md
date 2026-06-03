@@ -394,8 +394,8 @@ Implementar os dois: se `requiredCode > currentCode` → force; se apenas `recom
 [3] Home / Dashboard            ✅ CONCLUÍDA
 [4] Perfil                      ✅ CONCLUÍDA
 [5] Notificações Push           ✅ CONCLUÍDA
-[6] Módulo Louvor               ← Primeiro módulo operacional completo
-[7] Módulos Financeiro / Kids / EBD / Ação Social
+[6] Módulo Louvor               ← Primeiro módulo operacional completo                        ✅ CONCLUÍD
+[7] Módulos Financeiro / Kids / EBD / Ação Social ✅ CONCLUÍD
 [8] Versionamento + Polimento + Build de Produção
 [9] Google Play — lançamento interno
 ```
