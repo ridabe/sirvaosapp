@@ -2,7 +2,7 @@
   "expo": {
     "name": "SirvaOS",
     "slug": "sirvaos-app",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "platforms": ["android"],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -18,7 +18,7 @@
     },
     "android": {
       "package": "com.sirvaos.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "googleServicesFile": "./google-services.json",
       "edgeToEdge": true,
       "adaptiveIcon": {
