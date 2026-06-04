@@ -54,7 +54,8 @@ export type ModuleCode =
   | 'intercession'
 
 type ModuleRouteConfig = {
-  routeSlug: string                             // nome da pasta em app/(app)/modulos/
+  routeSlug: string                             // rota para membros comuns
+  adminRouteSlug?: string                       // rota alternativa para admins do módulo
   icon: keyof typeof Ionicons.glyphMap
   accentColor: string
 }
@@ -73,6 +74,7 @@ export const MODULE_ROUTE_MAP: Partial<Record<string, ModuleRouteConfig>> = {
   },
   kids: {
     routeSlug: 'kids',
+    adminRouteSlug: 'kids/admin',
     icon: 'happy-outline',
     accentColor: '#D97706',
   },

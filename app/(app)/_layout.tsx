@@ -16,6 +16,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/modulos/louvor': 'Louvor',
   '/modulos/financeiro': 'Financeiro',
   '/modulos/kids': 'Kids',
+  '/modulos/kids/admin': 'Kids — Administração',
   '/modulos/escola-biblica': 'Escola Bíblica',
   '/modulos/acao-social': 'Ação Social',
   '/modulos/intercessao': 'Intercessão',
@@ -29,6 +30,7 @@ export default function AppLayout() {
   const pathname = usePathname()
 
   const title = ROUTE_TITLES[pathname] ?? 'SirvaOS'
+  const isHome = pathname === '/'
 
   function openDrawer() {
     setDrawerOpen(true)
@@ -66,7 +68,7 @@ export default function AppLayout() {
   return (
     <View style={styles.root}>
       {/* Header fixo */}
-      <AppHeader title={title} onMenuPress={openDrawer} />
+      <AppHeader title={title} onMenuPress={openDrawer} showBack={!isHome} />
 
       {/* Conteúdo da tela atual */}
       <View style={styles.content}>

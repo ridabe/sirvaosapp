@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, RefreshControl,
+  TouchableOpacity, RefreshControl, LayoutAnimation,
 } from 'react-native'
 import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
@@ -10,6 +10,7 @@ import { useModules, AppModule } from '@/hooks/useModules'
 import { useEvents, TenantEvent } from '@/hooks/useEvents'
 import { useAnnouncements, Announcement } from '@/hooks/useAnnouncements'
 import { SkeletonBox } from '@/components/ui/SkeletonBox'
+import { SirvaOSMark } from '@/components/ui/SirvaOSMark'
 import { getModuleRoute } from '@/constants/modules'
 import { colors } from '@/constants/colors'
 import { spacing, fontSize, radius } from '@/lib/theme'
@@ -36,10 +37,8 @@ function formatEventDate(iso: string): string {
   const today = new Date()
   const tomorrow = new Date(today)
   tomorrow.setDate(today.getDate() + 1)
-
   if (d.toDateString() === today.toDateString()) return 'Hoje'
   if (d.toDateString() === tomorrow.toDateString()) return 'Amanhã'
-
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
 }
 
@@ -90,183 +89,154 @@ export default function HomeScreen() {
         />
       }
     >
-      {/* Saudação */}
-      <View style={styles.greetingCard}>
-        <View style={styles.greetingLeft}>
-          {memberLoading ? (
-            <>
-              <SkeletonBox width={120} height={14} style={{ marginBottom: 8, backgroundColor: 'rgba(255,255,255,0.2)' }} />
-              <SkeletonBox width={200} height={22} style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
-            </>
-          ) : (
-            <>
-              <Text style={styles.greetingSubtitle}>{getGreeting()},</Text>
-              <Text style={styles.greetingName}>{firstName ?? 'Membro'} 👋</Text>
-            </>
-          )}
-        </View>
-        <TouchableOpacity
-          style={styles.avatarBtn}
-          onPress={() => router.push('/(app)/perfil' as any)}
-          activeOpacity={0.8}
-        >
-          {memberLoading ? (
-            <SkeletonBox width={48} height={48} borderRadius={24} style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
-          ) : profile?.avatar_url ? (
-            <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} contentFit="cover" />
-          ) : (
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {firstName?.[0]?.toUpperCase() ?? '?'}
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
+      {/* Hero de saudação */}
+      <GreetingHero
+        memberLoading={memberLoading}
+        firstName={firstName}
+        profile={profile}
+        onAvatarPress={() => router.push('/(app)/perfil' as any)}
+      />
 
-      {/* Banner offline */}
+      {/* Offline */}
       {isOffline && (
         <View style={styles.offlineBanner}>
           <Ionicons name="cloud-offline-outline" size={16} color={colors.semantic.warning} />
-          <Text style={styles.offlineText}>
-            Você está offline. Puxe para baixo para tentar novamente.
-          </Text>
+          <Text style={styles.offlineText}>Você está offline. Puxe para baixo para tentar novamente.</Text>
         </View>
       )}
 
-      {/* Cards de admin — visíveis apenas para quem tem papel */}
-      {!memberLoading && !modulesLoading && adminModules.length > 0 && (
-        <View style={styles.section}>
-          <SectionHeader title="Administração" icon="shield-checkmark-outline" />
-          <View style={styles.adminGrid}>
-            {adminModules.map(mod => {
-              const cfg = getModuleRoute(mod.slug)
-              if (!cfg) return null
-              return (
-                <AdminCard
-                  key={mod.id}
-                  module={mod}
-                  onPress={() => router.push(`/(app)/modulos/${cfg.routeSlug}` as any)}
-                />
-              )
-            })}
-          </View>
-        </View>
-      )}
+      {/* Corpo principal */}
+      <View style={styles.body}>
 
-      {/* Meus ministérios */}
-      {(!modulesLoading && ministryModules.length > 0) || modulesLoading ? (
-        <View style={styles.section}>
-          <SectionHeader title="Meus ministérios" icon="grid-outline" />
-          {modulesLoading ? (
-            <ModulesSkeleton />
-          ) : modulesError && modulesError !== 'offline' ? (
-            <ErrorState message="Não foi possível carregar os módulos." onRetry={refetchModules} />
+        {/* Admin */}
+        {!memberLoading && !modulesLoading && adminModules.length > 0 && (
+          <>
+            <CollapsibleSection title="Administração" icon="shield-checkmark-outline" accentColor="#D97706">
+              <View style={styles.adminGrid}>
+                {adminModules.map(mod => {
+                  const cfg = getModuleRoute(mod.slug)
+                  if (!cfg) return null
+                  return (
+                    <AdminCard
+                      key={mod.id}
+                      module={mod}
+                      onPress={() => router.push(`/(app)/modulos/${cfg.adminRouteSlug ?? cfg.routeSlug}` as any)}
+                    />
+                  )
+                })}
+              </View>
+            </CollapsibleSection>
+            <SectionDivider />
+          </>
+        )}
+
+        {/* Ministérios */}
+        {((!modulesLoading && ministryModules.length > 0) || modulesLoading) && (
+          <>
+            <CollapsibleSection title="Meus ministérios" icon="grid-outline">
+              {modulesLoading ? (
+                <ModulesSkeleton />
+              ) : modulesError && modulesError !== 'offline' ? (
+                <ErrorState message="Não foi possível carregar os módulos." onRetry={refetchModules} />
+              ) : (
+                <View style={styles.modulesGrid}>
+                  {ministryModules.map(mod => {
+                    const cfg = getModuleRoute(mod.slug)
+                    return (
+                      <ModuleCard
+                        key={mod.id}
+                        module={mod}
+                        onPress={cfg ? () => router.push(`/(app)/modulos/${cfg.routeSlug}` as any) : () => {}}
+                      />
+                    )
+                  })}
+                </View>
+              )}
+            </CollapsibleSection>
+            <SectionDivider />
+          </>
+        )}
+
+        {/* Funcionalidades */}
+        {!modulesLoading && featureModules.length > 0 && (
+          <>
+            <CollapsibleSection title="Funcionalidades" icon="apps-outline">
+              <View style={styles.modulesGrid}>
+                {featureModules.map(mod => {
+                  const cfg = getModuleRoute(mod.slug)
+                  return (
+                    <ModuleCard
+                      key={mod.id}
+                      module={mod}
+                      onPress={cfg ? () => router.push(`/(app)/modulos/${cfg.routeSlug}` as any) : () => {}}
+                    />
+                  )
+                })}
+              </View>
+            </CollapsibleSection>
+            <SectionDivider />
+          </>
+        )}
+
+        {/* Oração */}
+        {!memberLoading && (
+          <>
+            <CollapsibleSection title="Oração" icon="hand-right-outline" accentColor="#8B5CF6">
+              <TouchableOpacity
+                style={styles.prayerCard}
+                onPress={() => router.push('/(app)/modulos/intercessao/pedido/novo' as any)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.prayerIconWrap}>
+                  <Ionicons name="add-circle-outline" size={26} color="#8B5CF6" />
+                </View>
+                <View style={styles.prayerInfo}>
+                  <Text style={styles.prayerTitle}>Enviar pedido de oração</Text>
+                  <Text style={styles.prayerDesc}>
+                    Compartilhe um pedido com o ministério de intercessão.
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.neutral[300]} />
+              </TouchableOpacity>
+
+              {prayerRequests.length > 0 && (
+                <PrayerRequestsAccordion requests={prayerRequests} onPress={(id) =>
+                  router.push(`/(app)/modulos/intercessao/pedido/${id}` as any)
+                } />
+              )}
+            </CollapsibleSection>
+            <SectionDivider />
+          </>
+        )}
+
+        {/* Eventos */}
+        <CollapsibleSection title="Próximos eventos" icon="calendar-outline">
+          {eventsLoading ? (
+            <EventsSkeleton />
+          ) : events.length === 0 ? (
+            <EmptyState icon="calendar-outline" message="Nenhum evento programado." muted />
           ) : (
-            <View style={styles.modulesGrid}>
-              {ministryModules.map(mod => {
-                const cfg = getModuleRoute(mod.slug)
-                return (
-                  <ModuleCard
-                    key={mod.id}
-                    module={mod}
-                    onPress={cfg ? () => router.push(`/(app)/modulos/${cfg.routeSlug}` as any) : () => {}}
-                  />
-                )
-              })}
-            </View>
-          )}
-        </View>
-      ) : null}
-
-      {/* Funcionalidades do app */}
-      {(!modulesLoading && featureModules.length > 0) && (
-        <View style={styles.section}>
-          <SectionHeader title="Funcionalidades" icon="apps-outline" />
-          <View style={styles.modulesGrid}>
-            {featureModules.map(mod => {
-              const cfg = getModuleRoute(mod.slug)
-              return (
-                <ModuleCard
-                  key={mod.id}
-                  module={mod}
-                  onPress={cfg ? () => router.push(`/(app)/modulos/${cfg.routeSlug}` as any) : () => {}}
-                />
-              )
-            })}
-          </View>
-        </View>
-      )}
-
-      {/* Oração — visível para todos os membros */}
-      {!memberLoading && (
-        <View style={styles.section}>
-          <SectionHeader title="Oração" icon="hand-right-outline" />
-
-          {/* Botão enviar */}
-          <TouchableOpacity
-            style={styles.prayerCard}
-            onPress={() => router.push('/(app)/modulos/intercessao/pedido/novo' as any)}
-            activeOpacity={0.8}
-          >
-            <View style={styles.prayerIconWrap}>
-              <Ionicons name="add-circle-outline" size={28} color="#8B5CF6" />
-            </View>
-            <View style={styles.prayerInfo}>
-              <Text style={styles.prayerTitle}>Enviar pedido de oração</Text>
-              <Text style={styles.prayerDesc}>
-                Compartilhe um pedido com o ministério de intercessão da igreja.
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.neutral[300]} />
-          </TouchableOpacity>
-
-          {/* Pedidos já enviados com status */}
-          {prayerRequests.length > 0 && (
-            <View style={styles.prayerRequestsList}>
-              <Text style={styles.prayerRequestsLabel}>Meus pedidos</Text>
-              {prayerRequests.map(req => (
-                <PrayerRequestRow
-                  key={req.id}
-                  request={req}
-                  onPress={() => router.push(`/(app)/modulos/intercessao/pedido/${req.id}` as any)}
-                />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.eventsScroll}>
+              {events.map(ev => (
+                <EventCard key={ev.id} event={ev} />
               ))}
-            </View>
+            </ScrollView>
           )}
-        </View>
-      )}
+        </CollapsibleSection>
 
-      {/* Próximos eventos */}
-      <View style={styles.section}>
-        <SectionHeader title="Próximos eventos" icon="calendar-outline" />
-        {eventsLoading ? (
-          <EventsSkeleton />
-        ) : events.length === 0 ? (
-          <EmptyState icon="calendar-outline" message="Nenhum evento programado." muted />
-        ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.eventsScroll}>
-            {events.map(ev => (
-              <EventCard key={ev.id} event={ev} />
-            ))}
-          </ScrollView>
-        )}
-      </View>
+        <SectionDivider />
 
-      {/* Comunicados recentes */}
-      <View style={[styles.section, styles.lastSection]}>
-        <SectionHeader title="Comunicados recentes" icon="megaphone-outline" />
-        {announcementsLoading ? (
-          <AnnouncementsSkeleton />
-        ) : announcements.length === 0 ? (
-          <EmptyState icon="megaphone-outline" message="Nenhum comunicado recente." muted />
-        ) : (
-          <View style={styles.announcementsList}>
-            {announcements.map(a => (
-              <AnnouncementCard key={a.id} item={a} />
-            ))}
-          </View>
-        )}
+        {/* Comunicados */}
+        <CollapsibleSection title="Comunicados recentes" icon="megaphone-outline">
+          {announcementsLoading ? (
+            <AnnouncementsSkeleton />
+          ) : announcements.length === 0 ? (
+            <EmptyState icon="megaphone-outline" message="Nenhum comunicado recente." muted />
+          ) : (
+            <AnnouncementsAccordion announcements={announcements} />
+          )}
+        </CollapsibleSection>
+
       </View>
     </ScrollView>
   )
@@ -274,13 +244,99 @@ export default function HomeScreen() {
 
 // ── Subcomponentes ──────────────────────────────────────────────────────────
 
-function SectionHeader({ title, icon }: { title: string; icon: keyof typeof Ionicons.glyphMap }) {
+function GreetingHero({ memberLoading, firstName, profile, onAvatarPress }: {
+  memberLoading: boolean
+  firstName: string | null | undefined
+  profile: any
+  onAvatarPress: () => void
+}) {
   return (
-    <View style={styles.sectionHeader}>
-      <Ionicons name={icon} size={16} color={colors.neutral[500]} />
-      <Text style={styles.sectionTitle}>{title}</Text>
+    <View style={styles.hero}>
+      {/* Círculos decorativos */}
+      <View style={styles.heroCircle1} />
+      <View style={styles.heroCircle2} />
+      <View style={styles.heroCircle3} />
+
+      {/* Marca */}
+      <View style={styles.heroMark}>
+        <SirvaOSMark size={36} variant="gradient" />
+        <Text style={styles.heroMarkText}>
+          Sirva<Text style={styles.heroMarkAccent}>OS</Text>
+        </Text>
+      </View>
+
+      {/* Saudação + avatar */}
+      <View style={styles.heroGreeting}>
+        <View style={styles.heroGreetingLeft}>
+          {memberLoading ? (
+            <>
+              <SkeletonBox width={100} height={13} style={{ marginBottom: 6, backgroundColor: 'rgba(255,255,255,0.2)' }} />
+              <SkeletonBox width={180} height={24} style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
+            </>
+          ) : (
+            <>
+              <Text style={styles.heroSubtitle}>{getGreeting()},</Text>
+              <Text style={styles.heroName}>{firstName ?? 'Membro'} 👋</Text>
+            </>
+          )}
+        </View>
+        <TouchableOpacity style={styles.avatarBtn} onPress={onAvatarPress} activeOpacity={0.8}>
+          {memberLoading ? (
+            <SkeletonBox width={52} height={52} borderRadius={26} style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
+          ) : profile?.avatar_url ? (
+            <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} contentFit="cover" />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{firstName?.[0]?.toUpperCase() ?? '?'}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
     </View>
   )
+}
+
+function CollapsibleSection({
+  title, icon, accentColor, defaultExpanded = true, children,
+}: {
+  title: string
+  icon: keyof typeof Ionicons.glyphMap
+  accentColor?: string
+  defaultExpanded?: boolean
+  children: React.ReactNode
+}) {
+  const [expanded, setExpanded] = useState(defaultExpanded)
+  const accent = accentColor ?? colors.brand.primary
+
+  const toggle = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    setExpanded(e => !e)
+  }
+
+  return (
+    <View style={styles.collapsible}>
+      <TouchableOpacity style={styles.collapsibleHeader} onPress={toggle} activeOpacity={0.7}>
+        <View style={[styles.collapsibleAccentBar, { backgroundColor: accent }]} />
+        <Ionicons name={icon} size={16} color={accent} />
+        <Text style={styles.collapsibleTitle}>{title}</Text>
+        <View style={{ flex: 1 }} />
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={16}
+          color={colors.neutral[400]}
+        />
+      </TouchableOpacity>
+      {expanded && (
+        <View style={styles.collapsibleBody}>
+          {children}
+        </View>
+      )}
+    </View>
+  )
+}
+
+function SectionDivider() {
+  return <View style={styles.divider} />
 }
 
 function ModuleCard({ module: mod, onPress }: { module: AppModule; onPress: () => void }) {
@@ -289,16 +345,11 @@ function ModuleCard({ module: mod, onPress }: { module: AppModule; onPress: () =
   const accent = cfg?.accentColor ?? colors.brand.primary
 
   return (
-    <TouchableOpacity style={styles.moduleCard} onPress={onPress} activeOpacity={0.8}>
-      <View style={[styles.moduleIconWrap, { backgroundColor: accent + '18' }]}>
-        <Ionicons name={icon} size={26} color={accent} />
+    <TouchableOpacity style={styles.moduleCard} onPress={onPress} activeOpacity={0.75}>
+      <View style={[styles.moduleIconWrap, { backgroundColor: accent + '1A' }]}>
+        <Ionicons name={icon} size={28} color={accent} />
       </View>
       <Text style={styles.moduleName} numberOfLines={2}>{mod.name}</Text>
-      {mod.isAdmin && (
-        <View style={styles.adminBadge}>
-          <Text style={styles.adminBadgeText}>Admin</Text>
-        </View>
-      )}
     </TouchableOpacity>
   )
 }
@@ -306,11 +357,13 @@ function ModuleCard({ module: mod, onPress }: { module: AppModule; onPress: () =
 function AdminCard({ module: mod, onPress }: { module: AppModule; onPress: () => void }) {
   const cfg = getModuleRoute(mod.slug)
   const icon = cfg?.icon ?? 'apps'
-  const accent = cfg?.accentColor ?? colors.brand.primary
+  const accent = cfg?.accentColor ?? '#D97706'
 
   return (
     <TouchableOpacity style={[styles.adminCard, { borderLeftColor: accent }]} onPress={onPress} activeOpacity={0.8}>
-      <Ionicons name={icon} size={20} color={accent} />
+      <View style={[styles.adminIconWrap, { backgroundColor: accent + '18' }]}>
+        <Ionicons name={icon} size={20} color={accent} />
+      </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.adminCardTitle}>{mod.name}</Text>
         <Text style={styles.adminCardSub}>Painel de administração</Text>
@@ -347,15 +400,104 @@ function EventCard({ event: ev }: { event: TenantEvent }) {
   )
 }
 
-function AnnouncementCard({ item }: { item: Announcement }) {
+function AnnouncementCard({ item, expanded, onToggle }: { item: Announcement; expanded: boolean; onToggle: () => void }) {
   return (
-    <View style={styles.announcementCard}>
-      <View style={styles.announcementDot} />
+    <TouchableOpacity style={styles.announcementCard} onPress={onToggle} activeOpacity={0.8}>
+      <View style={styles.announcementLeft}>
+        <View style={styles.announcementDot} />
+      </View>
       <View style={{ flex: 1 }}>
-        <Text style={styles.announcementTitle} numberOfLines={1}>{item.title}</Text>
-        <Text style={styles.announcementMessage} numberOfLines={2}>{item.message}</Text>
+        <View style={styles.announcementTopRow}>
+          <Text style={styles.announcementTitle} numberOfLines={expanded ? undefined : 1}>{item.title}</Text>
+          <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={14} color={colors.neutral[400]} />
+        </View>
+        {expanded && (
+          <Text style={styles.announcementMessage}>{item.message}</Text>
+        )}
         <Text style={styles.announcementDate}>{formatAnnouncementDate(item.published_at)}</Text>
       </View>
+    </TouchableOpacity>
+  )
+}
+
+function AnnouncementsAccordion({ announcements }: { announcements: Announcement[] }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [showAll, setShowAll] = useState(false)
+
+  const visible = showAll ? announcements : announcements.slice(0, 3)
+
+  const toggle = (id: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    setExpandedId(prev => prev === id ? null : id)
+  }
+
+  return (
+    <View style={styles.announcementsList}>
+      {visible.map(a => (
+        <AnnouncementCard
+          key={a.id}
+          item={a}
+          expanded={expandedId === a.id}
+          onToggle={() => toggle(a.id)}
+        />
+      ))}
+      {announcements.length > 3 && (
+        <TouchableOpacity
+          style={styles.showMoreBtn}
+          onPress={() => {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+            setShowAll(v => !v)
+          }}
+        >
+          <Text style={styles.showMoreText}>
+            {showAll ? 'Ver menos' : `Ver mais ${announcements.length - 3} comunicados`}
+          </Text>
+          <Ionicons name={showAll ? 'chevron-up' : 'chevron-down'} size={14} color={colors.brand.primary} />
+        </TouchableOpacity>
+      )}
+    </View>
+  )
+}
+
+const PRAYER_STATUS: Record<string, { label: string; color: string }> = {
+  new:         { label: 'Aguardando um intercessor',            color: '#3578A8' },
+  assigned:    { label: 'O intercessor já está com seu pedido', color: '#e08b00' },
+  interceding: { label: 'Alguém está orando por você agora',    color: '#c07000' },
+  done:        { label: 'Seu pedido foi intercedido 🙏',         color: '#2F8A5F' },
+}
+
+function PrayerRequestsAccordion({ requests, onPress }: { requests: MyPrayerRequest[]; onPress: (id: string) => void }) {
+  const [expanded, setExpanded] = useState(false)
+
+  const toggle = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    setExpanded(e => !e)
+  }
+
+  return (
+    <View style={styles.prayerRequestsWrap}>
+      <TouchableOpacity style={styles.prayerRequestsToggle} onPress={toggle} activeOpacity={0.7}>
+        <Ionicons name="list-outline" size={14} color={colors.neutral[500]} />
+        <Text style={styles.prayerRequestsLabel}>
+          {expanded ? 'Ocultar meus pedidos' : `Meus pedidos (${requests.length})`}
+        </Text>
+        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={14} color={colors.neutral[400]} />
+      </TouchableOpacity>
+      {expanded && (
+        <View style={styles.prayerRequestsList}>
+          {requests.map(req => {
+            const s = PRAYER_STATUS[req.status] ?? PRAYER_STATUS.new
+            return (
+              <TouchableOpacity key={req.id} style={styles.prayerRow} onPress={() => onPress(req.id)} activeOpacity={0.8}>
+                <Text style={styles.prayerRowContent} numberOfLines={1}>{req.content}</Text>
+                <View style={[styles.prayerRowBadge, { backgroundColor: s.color + '18' }]}>
+                  <Text style={[styles.prayerRowBadgeText, { color: s.color }]}>{s.label}</Text>
+                </View>
+              </TouchableOpacity>
+            )
+          })}
+        </View>
+      )}
     </View>
   )
 }
@@ -367,7 +509,7 @@ function ModulesSkeleton() {
     <View style={styles.modulesGrid}>
       {[1, 2, 3, 4].map(i => (
         <View key={i} style={styles.moduleCardSkeleton}>
-          <SkeletonBox width={52} height={52} borderRadius={radius.lg} style={{ marginBottom: 10 }} />
+          <SkeletonBox width={56} height={56} borderRadius={radius.lg} style={{ marginBottom: 10 }} />
           <SkeletonBox width={72} height={12} />
         </View>
       ))}
@@ -422,25 +564,6 @@ function EmptyState({ icon, message, muted }: {
   )
 }
 
-const PRAYER_STATUS: Record<string, { label: string; color: string }> = {
-  new:         { label: 'Aguardando um intercessor',             color: '#3578A8' },
-  assigned:    { label: 'O intercessor já está com seu pedido',  color: '#e08b00' },
-  interceding: { label: 'Alguém está orando por você agora',     color: '#c07000' },
-  done:        { label: 'Seu pedido foi intercedido 🙏',          color: '#2F8A5F' },
-}
-
-function PrayerRequestRow({ request: r, onPress }: { request: MyPrayerRequest; onPress: () => void }) {
-  const s = PRAYER_STATUS[r.status] ?? PRAYER_STATUS.new
-  return (
-    <TouchableOpacity style={styles.prayerRow} onPress={onPress} activeOpacity={0.8}>
-      <Text style={styles.prayerRowContent} numberOfLines={1}>{r.content}</Text>
-      <View style={[styles.prayerRowBadge, { backgroundColor: s.color + '18' }]}>
-        <Text style={[styles.prayerRowBadgeText, { color: s.color }]}>{s.label}</Text>
-      </View>
-    </TouchableOpacity>
-  )
-}
-
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <View style={styles.errorState}>
@@ -458,63 +581,93 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.neutral[50] },
   content: { paddingBottom: spacing.xxl },
 
-  // Saudação
-  greetingCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  // Hero
+  hero: {
     backgroundColor: colors.brand.primary,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.xl + 8,
+    paddingBottom: spacing.xl + 4,
+    overflow: 'hidden',
+    gap: spacing.md,
   },
-  greetingLeft: { flex: 1 },
-  greetingSubtitle: { fontSize: fontSize.sm, color: 'rgba(255,255,255,0.75)', marginBottom: 2 },
-  greetingName: { fontSize: fontSize.xl, fontWeight: '700', color: '#fff' },
+  heroCircle1: {
+    position: 'absolute', width: 200, height: 200, borderRadius: 100,
+    backgroundColor: '#087C7A', opacity: 0.35, right: -40, top: -80,
+  },
+  heroCircle2: {
+    position: 'absolute', width: 280, height: 280, borderRadius: 140,
+    backgroundColor: '#00A7C4', opacity: 0.08, right: -60, bottom: -120,
+  },
+  heroCircle3: {
+    position: 'absolute', width: 120, height: 120, borderRadius: 60,
+    backgroundColor: '#00C4A7', opacity: 0.12, left: -20, top: -30,
+  },
+  heroMark: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+  },
+  heroMarkText: {
+    fontSize: 20, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.4,
+  },
+  heroMarkAccent: { color: '#00A7C4' },
+  heroGreeting: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  },
+  heroGreetingLeft: { flex: 1 },
+  heroSubtitle: { fontSize: fontSize.sm, color: 'rgba(255,255,255,0.72)', marginBottom: 3 },
+  heroName: { fontSize: fontSize.xl + 2, fontWeight: '700', color: '#fff' },
   avatarBtn: { marginLeft: spacing.md },
   avatarImage: {
-    width: 48, height: 48, borderRadius: 24,
-    borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)',
+    width: 52, height: 52, borderRadius: 26,
+    borderWidth: 2, borderColor: 'rgba(255,255,255,0.45)',
   },
   avatar: {
-    width: 48, height: 48, borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 52, height: 52, borderRadius: 26,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)',
+    borderWidth: 2, borderColor: 'rgba(255,255,255,0.45)',
   },
   avatarText: { fontSize: fontSize.lg, fontWeight: '700', color: '#fff' },
 
   // Offline
   offlineBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     backgroundColor: '#FEF3C7',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FDE68A',
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.sm,
+    borderBottomWidth: 1, borderBottomColor: '#FDE68A',
   },
   offlineText: { flex: 1, fontSize: fontSize.xs, color: '#92400E' },
 
-  // Seções
-  section: {
-    marginTop: -16,
+  // Body
+  body: {
     backgroundColor: colors.neutral[50],
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    paddingTop: spacing.md,
+  },
+
+  // Collapsible section
+  collapsible: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingVertical: spacing.sm,
   },
-  lastSection: { marginTop: 0, borderTopLeftRadius: 0, borderTopRightRadius: 0 },
-  sectionHeader: {
-    flexDirection: 'row', alignItems: 'center',
-    gap: spacing.sm, marginBottom: spacing.md,
+  collapsibleHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    paddingVertical: spacing.sm,
   },
-  sectionTitle: {
-    fontSize: fontSize.sm, fontWeight: '600', color: colors.neutral[500],
-    textTransform: 'uppercase', letterSpacing: 0.6,
+  collapsibleAccentBar: {
+    width: 3, height: 16, borderRadius: 2,
+  },
+  collapsibleTitle: {
+    fontSize: fontSize.sm, fontWeight: '700', color: colors.neutral[700],
+    textTransform: 'uppercase', letterSpacing: 0.7,
+  },
+  collapsibleBody: {
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
+
+  // Divider
+  divider: {
+    height: 1, backgroundColor: colors.neutral[100],
+    marginHorizontal: spacing.lg, marginVertical: spacing.xs,
   },
 
   // Grid de módulos
@@ -525,23 +678,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
     borderWidth: 1, borderColor: colors.neutral[100],
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07, shadowRadius: 6, elevation: 3,
   },
   moduleIconWrap: {
-    width: 52, height: 52, borderRadius: radius.lg,
+    width: 56, height: 56, borderRadius: radius.lg,
     alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm,
   },
-  moduleName: { fontSize: fontSize.md, fontWeight: '600', color: colors.neutral[950] },
-  adminBadge: {
-    marginTop: spacing.xs, alignSelf: 'flex-start',
-    backgroundColor: colors.brand.primarySoft,
-    borderRadius: radius.sm, paddingHorizontal: 6, paddingVertical: 2,
-  },
-  adminBadgeText: {
-    fontSize: 10, fontWeight: '700', color: colors.brand.primary,
-    textTransform: 'uppercase', letterSpacing: 0.5,
-  },
+  moduleName: { fontSize: fontSize.md, fontWeight: '600', color: colors.neutral[900] },
   moduleCardSkeleton: {
     width: '47%',
     backgroundColor: colors.neutral.white,
@@ -551,30 +695,56 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
 
-  // Cards de admin
-  adminGrid: { gap: spacing.sm, marginBottom: spacing.sm },
+  // Admin cards
+  adminGrid: { gap: spacing.sm },
   adminCard: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     backgroundColor: colors.neutral.white,
     borderRadius: radius.md, padding: spacing.md,
     borderLeftWidth: 4, borderWidth: 1, borderColor: colors.neutral[100],
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04, shadowRadius: 2, elevation: 1,
+    shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
+  },
+  adminIconWrap: {
+    width: 40, height: 40, borderRadius: radius.md,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
   adminCardTitle: { fontSize: fontSize.md, fontWeight: '600', color: colors.neutral[950] },
   adminCardSub: { fontSize: fontSize.xs, color: colors.neutral[500], marginTop: 1 },
 
-  // Pedidos de oração
-  prayerRequestsList: { marginTop: spacing.sm, gap: spacing.xs },
-  prayerRequestsLabel: {
-    fontSize: fontSize.xs, fontWeight: '700', color: colors.neutral[500],
-    textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2,
+  // Oração
+  prayerCard: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+    backgroundColor: colors.neutral.white,
+    borderRadius: radius.lg, padding: spacing.md,
+    borderWidth: 1, borderColor: '#EDE9FE',
+    shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1, shadowRadius: 6, elevation: 3,
   },
+  prayerIconWrap: {
+    width: 48, height: 48, borderRadius: radius.lg,
+    backgroundColor: '#EDE9FE',
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  prayerInfo: { flex: 1 },
+  prayerTitle: { fontSize: fontSize.md, fontWeight: '700', color: colors.neutral[950] },
+  prayerDesc: { fontSize: fontSize.xs, color: colors.neutral[500], marginTop: 2, lineHeight: 18 },
+
+  prayerRequestsWrap: { marginTop: spacing.sm },
+  prayerRequestsToggle: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  prayerRequestsLabel: {
+    fontSize: fontSize.xs, fontWeight: '600', color: colors.neutral[500],
+    flex: 1,
+  },
+  prayerRequestsList: { marginTop: spacing.xs, gap: spacing.xs },
   prayerRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     backgroundColor: colors.neutral.white,
     borderWidth: 1, borderColor: colors.neutral[100],
-    borderRadius: radius.md, padding: spacing.md,
+    borderRadius: radius.md, padding: spacing.sm,
   },
   prayerRowContent: { flex: 1, fontSize: fontSize.sm, color: colors.neutral[800] },
   prayerRowBadge: {
@@ -583,47 +753,16 @@ const styles = StyleSheet.create({
   },
   prayerRowBadgeText: { fontSize: 11, fontWeight: '700' },
 
-  // Envio de pedido
-  prayerCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: colors.neutral.white,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: '#EDE9FE',
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  prayerIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: radius.lg,
-    backgroundColor: '#EDE9FE',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  prayerInfo: { flex: 1 },
-  prayerTitle: { fontSize: fontSize.md, fontWeight: '700', color: colors.neutral[950] },
-  prayerDesc: { fontSize: fontSize.xs, color: colors.neutral[500], marginTop: 2, lineHeight: 18 },
-
   // Eventos
   eventsScroll: { marginHorizontal: -spacing.lg, paddingHorizontal: spacing.lg },
   eventCard: {
-    width: 180,
+    width: 190,
     backgroundColor: colors.neutral.white,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginRight: spacing.md,
-    borderTopWidth: 3,
+    borderRadius: radius.lg, padding: spacing.md,
+    marginRight: spacing.md, borderTopWidth: 4,
     borderWidth: 1, borderColor: colors.neutral[100],
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07, shadowRadius: 5, elevation: 3,
   },
   eventTypeBadge: {
     alignSelf: 'flex-start', borderRadius: radius.sm,
@@ -635,26 +774,39 @@ const styles = StyleSheet.create({
   eventMetaText: { fontSize: 11, color: colors.neutral[500] },
   eventMetaDot: { fontSize: 11, color: colors.neutral[300] },
   eventCardSkeleton: {
-    width: 180, backgroundColor: colors.neutral.white,
+    width: 190, backgroundColor: colors.neutral.white,
     borderRadius: radius.lg, padding: spacing.md, marginRight: spacing.md,
     borderWidth: 1, borderColor: colors.neutral[100],
   },
 
   // Comunicados
-  announcementsList: { gap: spacing.md },
+  announcementsList: { gap: spacing.sm },
   announcementCard: {
     flexDirection: 'row', gap: spacing.md,
     backgroundColor: colors.neutral.white,
     borderRadius: radius.md, padding: spacing.md,
     borderWidth: 1, borderColor: colors.neutral[100],
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04, shadowRadius: 2, elevation: 1,
   },
+  announcementLeft: { paddingTop: 4 },
   announcementDot: {
-    width: 8, height: 8, borderRadius: 4,
-    backgroundColor: colors.brand.primary, marginTop: 4,
+    width: 8, height: 8, borderRadius: 4, backgroundColor: colors.brand.primary,
   },
-  announcementTitle: { fontSize: fontSize.sm, fontWeight: '600', color: colors.neutral[950] },
-  announcementMessage: { fontSize: fontSize.xs, color: colors.neutral[500], marginTop: 2 },
+  announcementTopRow: {
+    flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.sm,
+  },
+  announcementTitle: { flex: 1, fontSize: fontSize.sm, fontWeight: '600', color: colors.neutral[950] },
+  announcementMessage: { fontSize: fontSize.xs, color: colors.neutral[500], marginTop: spacing.xs, lineHeight: 18 },
   announcementDate: { fontSize: 11, color: colors.neutral[300], marginTop: 4 },
+
+  showMoreBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: spacing.xs, paddingVertical: spacing.sm,
+    borderWidth: 1, borderColor: colors.neutral[200],
+    borderRadius: radius.md, backgroundColor: colors.neutral.white,
+  },
+  showMoreText: { fontSize: fontSize.xs, fontWeight: '600', color: colors.brand.primary },
 
   // Estados
   emptyState: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.sm },

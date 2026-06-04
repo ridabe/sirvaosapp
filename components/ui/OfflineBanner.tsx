@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Animated, View, Text, StyleSheet } from 'react-native'
+import { Animated, Text, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { colors } from '@/constants/colors'
@@ -9,23 +9,19 @@ const BANNER_HEIGHT = 36
 
 export function OfflineBanner() {
   const { isOnline } = useNetworkStatus()
-  const slideY = useRef(new Animated.Value(-BANNER_HEIGHT)).current
-  const prevOnline = useRef(true)
+  const heightAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
-    if (prevOnline.current === isOnline) return
-    prevOnline.current = isOnline
-
-    Animated.timing(slideY, {
-      toValue: isOnline ? -BANNER_HEIGHT : 0,
+    Animated.timing(heightAnim, {
+      toValue: isOnline ? 0 : BANNER_HEIGHT,
       duration: 280,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start()
   }, [isOnline])
 
   return (
     <Animated.View
-      style={[styles.banner, { transform: [{ translateY: slideY }] }]}
+      style={[styles.banner, { height: heightAnim, overflow: 'hidden' }]}
       accessibilityLiveRegion="polite"
       accessibilityRole="alert"
       pointerEvents="none"
@@ -38,7 +34,6 @@ export function OfflineBanner() {
 
 const styles = StyleSheet.create({
   banner: {
-    height: BANNER_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

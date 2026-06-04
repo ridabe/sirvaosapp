@@ -56,14 +56,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) {
+        // Token inválido/revogado — limpa a sessão corrompida e redireciona para login
+        supabase.auth.signOut().finally(() => {
+          setLoading(false)
+          setProfileLoading(false)
+        })
+        return
+      }
       setSession(data.session)
       setLoading(false)
       if (data.session?.user) fetchProfile(data.session.user.id)
       else setProfileLoading(false)
+    }).catch(() => {
+      supabase.auth.signOut().finally(() => {
+        setLoading(false)
+        setProfileLoading(false)
+      })
     })
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, sess) => {
+      // TOKEN_REFRESHED com sessão nula = refresh token inválido
+      if (event === 'TOKEN_REFRESHED' && !sess) {
+        supabase.auth.signOut()
+        return
+      }
       setSession(sess)
       if (sess?.user) fetchProfile(sess.user.id)
       else { setProfile(null); setMember(null); setProfileLoading(false) }

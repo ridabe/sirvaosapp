@@ -90,7 +90,7 @@ export function useModules(tenantId: string | null | undefined) {
       }
 
       // 3. Checks em paralelo
-      const [adminRows, worshipRows, bibleRows, kidsRows, intercessionRows] = await Promise.all([
+      const [adminRows, worshipRows, bibleRows, kidsRows, kidsDirectRows, intercessionRows] = await Promise.all([
         // Admin de módulo
         (supabase as any)
           .from('tenant_module_admins')
@@ -111,9 +111,16 @@ export function useModules(tenantId: string | null | undefined) {
           .eq('member_id', memberId)
           .limit(1),
 
-        // Responsável no Kids
+        // Responsável no Kids via kids_guardians
         (supabase as any)
           .from('kids_guardians')
+          .select('id')
+          .eq('member_id', memberId)
+          .limit(1),
+
+        // Responsável no Kids via kids_children.member_id (fallback)
+        (supabase as any)
+          .from('kids_children')
           .select('id')
           .eq('member_id', memberId)
           .limit(1),
@@ -129,7 +136,7 @@ export function useModules(tenantId: string | null | undefined) {
       const adminModuleIds = new Set((adminRows.data ?? []).map((r: any) => r.module_id))
       const isWorshipMember = (worshipRows.data ?? []).length > 0
       const isBibleStudent = (bibleRows.data ?? []).length > 0
-      const isKidsGuardian = (kidsRows.data ?? []).length > 0
+      const isKidsGuardian = (kidsRows.data ?? []).length > 0 || (kidsDirectRows.data ?? []).length > 0
       const isIntercessionMember = (intercessionRows.data ?? []).length > 0
 
       // 4. Aplica regras por módulo

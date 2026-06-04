@@ -9,26 +9,45 @@ import { useNotifications } from '@/context/NotificationsContext'
 type Props = {
   title: string
   onMenuPress: () => void
+  showBack?: boolean
 }
 
-export function AppHeader({ title, onMenuPress }: Props) {
+export function AppHeader({ title, onMenuPress, showBack = false }: Props) {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { unreadCount } = useNotifications()
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <TouchableOpacity
-        onPress={onMenuPress}
-        style={styles.btn}
-        activeOpacity={0.7}
-        accessibilityLabel="Abrir menu"
-        accessibilityRole="button"
-      >
-        <Ionicons name="menu" size={26} color="#fff" />
-      </TouchableOpacity>
+      {showBack ? (
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.btn}
+          activeOpacity={0.7}
+          accessibilityLabel="Voltar"
+          accessibilityRole="button"
+        >
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          onPress={onMenuPress}
+          style={styles.btn}
+          activeOpacity={0.7}
+          accessibilityLabel="Abrir menu"
+          accessibilityRole="button"
+        >
+          <Ionicons name="menu" size={26} color="#fff" />
+        </TouchableOpacity>
+      )}
 
-      <Text style={styles.title} numberOfLines={1}>{title}</Text>
+      {title === 'Início' ? (
+        <Text style={styles.logoTitle} numberOfLines={1}>
+          Sirva<Text style={styles.logoAccent}>OS</Text>
+        </Text>
+      ) : (
+        <Text style={styles.title} numberOfLines={1}>{title}</Text>
+      )}
 
       <TouchableOpacity
         onPress={() => router.push('/(app)/notificacoes')}
@@ -69,6 +88,17 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     fontWeight: '600',
     color: '#fff',
+  },
+  logoTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: fontSize.lg,
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: -0.3,
+  },
+  logoAccent: {
+    color: '#00A7C4',
   },
   badge: {
     position: 'absolute',
