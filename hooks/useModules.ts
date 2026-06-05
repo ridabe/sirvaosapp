@@ -90,19 +90,19 @@ export function useModules(tenantId: string | null | undefined) {
       }
 
       // 3. Checks em paralelo
-      const [adminRows, worshipRows, bibleRows, kidsRows, kidsDirectRows, intercessionRows] = await Promise.all([
+      const [adminRows, memberMinistryRow, bibleRows, kidsRows, kidsDirectRows, intercessionRows] = await Promise.all([
         // Admin de módulo
         (supabase as any)
           .from('tenant_module_admins')
           .select('module_id')
           .eq('member_id', memberId),
 
-        // Membro do louvor (tem qualquer assignment)
+        // Ministério do membro (para acesso ao louvor por filiação ministerial)
         (supabase as any)
-          .from('worship_assignments')
-          .select('id')
-          .eq('member_id', memberId)
-          .limit(1),
+          .from('members')
+          .select('ministry')
+          .eq('id', memberId)
+          .single(),
 
         // Aluno da EBD
         (supabase as any)
@@ -134,7 +134,18 @@ export function useModules(tenantId: string | null | undefined) {
       ])
 
       const adminModuleIds = new Set((adminRows.data ?? []).map((r: any) => r.module_id))
-      const isWorshipMember = (worshipRows.data ?? []).length > 0
+
+      // Acesso ao louvor: pertencer a ministério de louvor, dança, mídia, som, áudio ou iluminação
+      const WORSHIP_MINISTRY_KEYWORDS = [
+        'louvor', 'worship', 'dança', 'danca',
+        'mídia', 'midia', 'transmissão', 'transmissao', 'media',
+        'som', 'áudio', 'audio',
+        'iluminação', 'iluminacao', 'luz',
+        'stream', 'audiovisual', 'arte', 'técnica', 'tecnica',
+      ]
+      const memberMinistry: string = (memberMinistryRow.data?.ministry ?? '').toLowerCase()
+      const isWorshipMember = memberMinistry.length > 0 &&
+        WORSHIP_MINISTRY_KEYWORDS.some(k => memberMinistry.includes(k))
       const isBibleStudent = (bibleRows.data ?? []).length > 0
       const isKidsGuardian = (kidsRows.data ?? []).length > 0 || (kidsDirectRows.data ?? []).length > 0
       const isIntercessionMember = (intercessionRows.data ?? []).length > 0

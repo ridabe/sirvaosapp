@@ -8,6 +8,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { format, parseISO, isToday, isTomorrow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useWorshipSchedule, WorshipAssignment } from '@/hooks/useWorshipSchedule'
+import { useModules } from '@/hooks/useModules'
+import { useAuth } from '@/context/AuthContext'
 import { colors } from '@/constants/colors'
 import { spacing, fontSize, radius } from '@/lib/theme'
 
@@ -38,7 +40,11 @@ function formatEventTime(iso: string): string {
 export default function LouvorScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
+  const { profile } = useAuth()
   const { upcoming, past, loading, error, refetch } = useWorshipSchedule()
+  const { modules } = useModules(profile?.tenant_id)
+  const worshipModule = modules.find(m => m.slug === 'worship')
+  const isAdmin = worshipModule?.isAdmin ?? false
 
   const sections = [
     ...(upcoming.length > 0 ? [{ title: 'Próximas escalas', data: upcoming }] : []),
@@ -68,6 +74,16 @@ export default function LouvorScreen() {
   if (sections.length === 0) {
     return (
       <View style={styles.center}>
+        {isAdmin && (
+          <TouchableOpacity
+            style={styles.adminBtn}
+            onPress={() => router.push('/(app)/modulos/louvor/admin' as any)}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="settings-outline" size={18} color="#fff" />
+            <Text style={styles.adminBtnText}>Administrar módulo</Text>
+          </TouchableOpacity>
+        )}
         <Ionicons name="musical-notes-outline" size={48} color={colors.neutral[300]} />
         <Text style={styles.emptyTitle}>Nenhuma escala</Text>
         <Text style={styles.emptyBody}>Você ainda não está em nenhuma escala cadastrada.</Text>
@@ -76,6 +92,18 @@ export default function LouvorScreen() {
   }
 
   return (
+    <View style={{ flex: 1 }}>
+    {isAdmin && (
+      <TouchableOpacity
+        style={styles.adminBanner}
+        onPress={() => router.push('/(app)/modulos/louvor/admin' as any)}
+        activeOpacity={0.85}
+      >
+        <Ionicons name="settings-outline" size={16} color={colors.brand.primary} />
+        <Text style={styles.adminBannerText}>Administrar módulo</Text>
+        <Ionicons name="chevron-forward-outline" size={16} color={colors.brand.primary} />
+      </TouchableOpacity>
+    )}
     <SectionList
       sections={sections}
       keyExtractor={item => item.id}
@@ -96,6 +124,7 @@ export default function LouvorScreen() {
       )}
       stickySectionHeadersEnabled={false}
     />
+    </View>
   )
 }
 
@@ -169,6 +198,18 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   retryText: { fontSize: fontSize.sm, color: colors.brand.primary, fontWeight: '600' },
+  adminBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
+    backgroundColor: colors.brand.primary, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm,
+    borderRadius: radius.lg, marginBottom: spacing.md,
+  },
+  adminBtnText: { fontSize: fontSize.sm, color: '#fff', fontWeight: '700' },
+  adminBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    backgroundColor: colors.brand.primarySoft, padding: spacing.md,
+    marginHorizontal: spacing.lg, marginTop: spacing.sm, borderRadius: radius.md,
+  },
+  adminBannerText: { flex: 1, fontSize: fontSize.sm, color: colors.brand.primary, fontWeight: '600' },
   list: { paddingTop: spacing.sm },
   sectionHeader: {
     paddingHorizontal: spacing.lg,

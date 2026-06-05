@@ -14,6 +14,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/notificacoes': 'Notificações',
   '/perfil': 'Meu Perfil',
   '/modulos/louvor': 'Louvor',
+  '/modulos/louvor/admin': 'Louvor — Administração',
   '/modulos/financeiro': 'Financeiro',
   '/modulos/kids': 'Kids',
   '/modulos/kids/admin': 'Kids — Administração',

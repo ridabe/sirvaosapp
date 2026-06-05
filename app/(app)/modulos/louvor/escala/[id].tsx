@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  Alert, TextInput, ActivityIndicator, Modal, KeyboardAvoidingView, Platform,
+  Alert, TextInput, ActivityIndicator, Modal, KeyboardAvoidingView, Platform, Linking,
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { format, parseISO, isToday, isTomorrow, isPast } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useWorshipSchedule, WorshipAssignment } from '@/hooks/useWorshipSchedule'
+import { useWorshipRepertoire, RepertoireItem } from '@/hooks/useWorshipRepertoire'
 import { colors } from '@/constants/colors'
 import { spacing, fontSize, radius } from '@/lib/theme'
 
@@ -31,6 +32,7 @@ export default function EscalaDetalheScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { upcoming, past, loading, markViewed, respond } = useWorshipSchedule()
+  const { repertoire, repertoireLoading, loadEventRepertoire } = useWorshipRepertoire()
 
   const [responding, setResponding] = useState(false)
   const [declineModalVisible, setDeclineModalVisible] = useState(false)
@@ -42,6 +44,10 @@ export default function EscalaDetalheScreen() {
   useEffect(() => {
     if (id) markViewed(id)
   }, [id])
+
+  useEffect(() => {
+    if (assignment?.event?.id) loadEventRepertoire(assignment.event.id)
+  }, [assignment?.event?.id])
 
   async function handleConfirm() {
     setResponding(true)
@@ -160,6 +166,23 @@ export default function EscalaDetalheScreen() {
           )}
         </View>
 
+        {/* Repertório */}
+        {(repertoireLoading || repertoire.length > 0) && (
+          <View style={styles.repertoireCard}>
+            <View style={styles.repertoireHeader}>
+              <Ionicons name="musical-notes-outline" size={16} color={colors.neutral[600]} />
+              <Text style={styles.repertoireTitle}>Repertório do evento</Text>
+            </View>
+            {repertoireLoading ? (
+              <ActivityIndicator size="small" color={colors.brand.primary} style={{ margin: spacing.md }} />
+            ) : (
+              repertoire.map((item, index) => (
+                <RepertoireSongRow key={item.id ?? index} item={item} index={index} />
+              ))
+            )}
+          </View>
+        )}
+
         {/* Ações */}
         {canRespond && (
           <View style={styles.actions}>
@@ -263,6 +286,35 @@ function DetailRow({ icon, label, value }: { icon: any; label: string; value: st
       <View style={styles.detailContent}>
         <Text style={styles.detailLabel}>{label}</Text>
         <Text style={styles.detailValue}>{value}</Text>
+      </View>
+    </View>
+  )
+}
+
+function RepertoireSongRow({ item, index }: { item: RepertoireItem; index: number }) {
+  return (
+    <View style={styles.repertoireRow}>
+      <View style={styles.repertoireNum}>
+        <Text style={styles.repertoireNumText}>{index + 1}</Text>
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.repertoireSongTitle} numberOfLines={1}>{item.song.title}</Text>
+        <Text style={styles.repertoireSongArtist} numberOfLines={1}>{item.song.artist}</Text>
+        {item.key ? <Text style={styles.repertoireSongKey}>Tom: {item.key}</Text> : null}
+        <View style={styles.repertoireLinks}>
+          {item.song.cifraclub_url && (
+            <TouchableOpacity style={styles.repertoireLink} onPress={() => Linking.openURL(item.song.cifraclub_url!)}>
+              <Ionicons name="musical-note-outline" size={13} color={colors.brand.primary} />
+              <Text style={styles.repertoireLinkText}>Cifra</Text>
+            </TouchableOpacity>
+          )}
+          {item.song.youtube_url && (
+            <TouchableOpacity style={styles.repertoireLink} onPress={() => Linking.openURL(item.song.youtube_url!)}>
+              <Ionicons name="logo-youtube" size={13} color="#DC2626" />
+              <Text style={[styles.repertoireLinkText, { color: '#DC2626' }]}>YouTube</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </View>
   )
@@ -379,4 +431,20 @@ const styles = StyleSheet.create({
   modalCancelText: { fontSize: fontSize.md, fontWeight: '600', color: colors.neutral[600] },
   modalConfirmBtn: { flex: 2, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.semantic.danger, alignItems: 'center' },
   modalConfirmText: { fontSize: fontSize.md, fontWeight: '700', color: '#fff' },
+
+  // Repertório
+  repertoireCard: {
+    backgroundColor: colors.neutral.white, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.neutral[100], overflow: 'hidden',
+  },
+  repertoireHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.neutral[50] },
+  repertoireTitle: { fontSize: fontSize.sm, fontWeight: '700', color: colors.neutral[700], textTransform: 'uppercase', letterSpacing: 0.5 },
+  repertoireRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md, padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.neutral[50] },
+  repertoireNum: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.brand.primarySoft, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  repertoireNumText: { fontSize: 11, fontWeight: '700', color: colors.brand.primary },
+  repertoireSongTitle: { fontSize: fontSize.md, fontWeight: '600', color: colors.neutral[950] },
+  repertoireSongArtist: { fontSize: fontSize.sm, color: colors.neutral[500], marginTop: 1 },
+  repertoireSongKey: { fontSize: fontSize.xs, color: colors.neutral[400], marginTop: 2 },
+  repertoireLinks: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
+  repertoireLink: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  repertoireLinkText: { fontSize: fontSize.xs, color: colors.brand.primary, fontWeight: '600' },
 })
