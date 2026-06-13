@@ -9,9 +9,10 @@ import * as SecureStore from 'expo-secure-store'
 import { Ionicons } from '@expo/vector-icons'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
+import { SirvaOSMark } from '@/components/ui/SirvaOSMark'
 import { useSignIn } from '@/hooks/useAuth'
 import { colors } from '@/constants/colors'
-import { spacing, fontSize, radius, common } from '@/lib/theme'
+import { spacing, fontSize, radius, elevation } from '@/lib/theme'
 
 const BIOMETRIC_EMAIL_KEY = 'biometric_email'
 const BIOMETRIC_PASS_KEY = 'biometric_pass'
@@ -68,7 +69,6 @@ export default function LoginScreen() {
   }
 
   async function handleLoginSuccess() {
-    // Oferece salvar credenciais para biometria se ainda não salvo
     const savedEmail = await SecureStore.getItemAsync(BIOMETRIC_EMAIL_KEY)
     if (!savedEmail && biometricAvailable === false) {
       const compatible = await LocalAuthentication.hasHardwareAsync()
@@ -91,7 +91,6 @@ export default function LoginScreen() {
     }
   }
 
-  // Escuta o sucesso do login via mudança de sessão (AuthContext redireciona automaticamente)
   useEffect(() => {
     if (!loading && !error && email && password) {
       handleLoginSuccess()
@@ -109,22 +108,32 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
         bounces={false}
       >
-        {/* Header */}
+        {/* ── Header com logo oficial ── */}
         <View style={styles.header}>
-          <View style={styles.logoWrapper}>
-            <Ionicons name="leaf" size={36} color="#fff" />
+          <View style={styles.circle1} />
+          <View style={styles.circle2} />
+          <View style={styles.circle3} />
+
+          <View style={styles.logoBlock}>
+            <SirvaOSMark size={80} variant="gradient" />
+            <View style={styles.logoTextRow}>
+              <Text style={styles.logoText}>
+                Sirva<Text style={styles.logoAccent}>OS</Text>
+              </Text>
+            </View>
+            <Text style={styles.tagline}>organize para servir melhor</Text>
           </View>
-          <Text style={styles.logoText}>SirvaOS</Text>
-          <Text style={styles.tagline}>Organize para servir melhor.</Text>
         </View>
 
-        {/* Form */}
-        <View style={styles.form}>
-          <Text style={styles.formTitle}>Entrar</Text>
+        {/* ── Card do formulário ── */}
+        <View style={styles.formCard}>
+          <Text style={styles.formTitle}>Entrar na sua conta</Text>
+          <Text style={styles.formSubtitle}>Bem-vindo de volta! Acesse sua conta abaixo.</Text>
 
+          {/* Banner de erro */}
           {error && (
             <View style={styles.errorBanner}>
-              <Ionicons name="alert-circle-outline" size={16} color={colors.semantic.danger} />
+              <Ionicons name="alert-circle-outline" size={18} color={colors.semantic.danger} />
               <Text style={styles.errorBannerText}>{error}</Text>
             </View>
           )}
@@ -137,6 +146,7 @@ export default function LoginScreen() {
             keyboardType="email-address"
             autoComplete="email"
             placeholder="seu@email.com"
+            prefixIcon="mail-outline"
           />
 
           <Input
@@ -146,6 +156,7 @@ export default function LoginScreen() {
             error={passwordError}
             password
             placeholder="Sua senha"
+            prefixIcon="lock-closed-outline"
           />
 
           <TouchableOpacity
@@ -154,10 +165,18 @@ export default function LoginScreen() {
             accessibilityLabel="Esqueci minha senha"
             accessibilityRole="link"
           >
-            <Text style={common.link}>Esqueci minha senha</Text>
+            <Text style={styles.forgotText}>Esqueci minha senha</Text>
           </TouchableOpacity>
 
-          <Button label="Entrar" onPress={handleLogin} loading={loading} style={styles.btnLogin} />
+          <Button
+            label="Entrar"
+            onPress={handleLogin}
+            loading={loading}
+            variant="filled"
+            icon="arrow-forward-outline"
+            iconPosition="right"
+            style={styles.btnLogin}
+          />
 
           {biometricAvailable && (
             <TouchableOpacity
@@ -165,9 +184,13 @@ export default function LoginScreen() {
               onPress={handleBiometric}
               accessibilityLabel="Entrar com biometria"
               accessibilityRole="button"
+              activeOpacity={0.8}
             >
-              <Ionicons name="finger-print" size={28} color={colors.brand.primary} />
+              <View style={styles.biometricIconWrap}>
+                <Ionicons name="finger-print" size={26} color={colors.brand.primary} />
+              </View>
               <Text style={styles.biometricText}>Entrar com biometria</Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.neutral[300]} />
             </TouchableOpacity>
           )}
 
@@ -178,15 +201,16 @@ export default function LoginScreen() {
           </View>
 
           <Button
-            label="Primeiro acesso"
-            variant="secondary"
+            label="Criar acesso pela primeira vez"
+            variant="outlined"
             onPress={() => router.push('/(auth)/primeiro-acesso')}
+            icon="person-add-outline"
           />
         </View>
 
         <Text style={styles.footer}>
           Ao entrar, você concorda com a{' '}
-          <Text style={common.link}>Política de Privacidade</Text>.
+          <Text style={styles.footerLink}>Política de Privacidade</Text>.
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -198,86 +222,143 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     backgroundColor: colors.neutral[50],
   },
+
+  // Header
   header: {
-    backgroundColor: colors.brand.primary,
-    paddingTop: 72,
-    paddingBottom: 40,
+    backgroundColor: colors.brand.primaryDark,
+    paddingTop: 64,
+    paddingBottom: 56,
     alignItems: 'center',
+    overflow: 'hidden',
   },
-  logoWrapper: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+  circle1: {
+    position: 'absolute', width: 260, height: 260, borderRadius: 130,
+    backgroundColor: '#087C7A', opacity: 0.3, right: -80, top: -80,
+  },
+  circle2: {
+    position: 'absolute', width: 180, height: 180, borderRadius: 90,
+    backgroundColor: '#00A7C4', opacity: 0.1, left: -60, bottom: -60,
+  },
+  circle3: {
+    position: 'absolute', width: 100, height: 100, borderRadius: 50,
+    backgroundColor: '#E0F6F4', opacity: 0.06, left: 40, top: 20,
+  },
+  logoBlock: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  logoTextRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.sm,
   },
   logoText: {
+    fontSize: fontSize.xxl,
+    fontWeight: '800',
     color: '#fff',
-    fontSize: 28,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: -0.5,
+  },
+  logoAccent: {
+    color: '#00A7C4',
   },
   tagline: {
-    color: 'rgba(255,255,255,0.75)',
+    color: 'rgba(255,255,255,0.6)',
     fontSize: fontSize.sm,
-    marginTop: 4,
+    fontWeight: '500',
+    letterSpacing: 0.3,
   },
-  form: {
-    flex: 1,
+
+  // Card do formulário
+  formCard: {
     backgroundColor: colors.neutral.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    marginTop: -20,
-    padding: spacing.xl,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -24,
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.xl,
     paddingBottom: spacing.xl + 80,
+    ...elevation.md,
   },
   formTitle: {
     fontSize: fontSize.xl,
     fontWeight: '700',
     color: colors.neutral[950],
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xs,
   },
+  formSubtitle: {
+    fontSize: fontSize.md,
+    color: colors.neutral[500],
+    marginBottom: spacing.xl,
+  },
+
+  // Erro
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.sm,
     backgroundColor: colors.semantic.dangerSoft,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.semantic.danger,
   },
   errorBannerText: {
     flex: 1,
     fontSize: fontSize.sm,
     color: colors.semantic.danger,
+    fontWeight: '500',
   },
+
+  // Esqueci
   forgotWrapper: {
     alignSelf: 'flex-end',
-    marginTop: -spacing.sm,
+    marginTop: -spacing.xs,
     marginBottom: spacing.lg,
+    paddingVertical: spacing.xs,
   },
+  forgotText: {
+    color: colors.brand.primary,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
+
+  // Botão login
   btnLogin: {
     marginBottom: spacing.md,
   },
+
+  // Biometria
   biometricBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.brand.primarySoft,
+    borderRadius: radius.xl,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  biometricIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    backgroundColor: colors.neutral.white,
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
+    ...elevation.sm,
   },
   biometricText: {
-    color: colors.brand.primary,
-    fontSize: fontSize.sm,
-    fontWeight: '500',
+    flex: 1,
+    color: colors.brand.primaryDark,
+    fontSize: fontSize.base,
+    fontWeight: '600',
   },
+
+  // Divisor
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: spacing.md,
+    marginVertical: spacing.lg,
     gap: spacing.sm,
   },
   dividerLine: {
@@ -287,13 +368,20 @@ const styles = StyleSheet.create({
   },
   dividerText: {
     fontSize: fontSize.xs,
-    color: colors.neutral[500],
+    color: colors.neutral[400],
+    fontWeight: '500',
   },
+
+  // Rodapé
   footer: {
     textAlign: 'center',
     fontSize: fontSize.xs,
-    color: colors.neutral[500],
+    color: colors.neutral[400],
     padding: spacing.lg,
     backgroundColor: colors.neutral.white,
+  },
+  footerLink: {
+    color: colors.brand.primary,
+    fontWeight: '600',
   },
 })

@@ -1,10 +1,10 @@
 import { useState, useRef } from 'react'
 import { View, Animated, TouchableWithoutFeedback, StyleSheet, Dimensions } from 'react-native'
-import { Slot } from 'expo-router'
+import { Slot, usePathname } from 'expo-router'
 import { DrawerMenu } from '@/components/ui/DrawerMenu'
 import { AppHeader } from '@/components/ui/AppHeader'
+import { BottomNavBar } from '@/components/ui/BottomNavBar'
 import { OfflineBanner } from '@/components/ui/OfflineBanner'
-import { usePathname } from 'expo-router'
 import { colors } from '@/constants/colors'
 
 const DRAWER_WIDTH = Dimensions.get('window').width * 0.82
@@ -32,6 +32,7 @@ export default function AppLayout() {
 
   const title = ROUTE_TITLES[pathname] ?? 'SirvaOS'
   const isHome = pathname === '/'
+  const showBack = !isHome && pathname !== '/notificacoes' && pathname !== '/perfil'
 
   function openDrawer() {
     setDrawerOpen(true)
@@ -69,13 +70,16 @@ export default function AppLayout() {
   return (
     <View style={styles.root}>
       {/* Header fixo */}
-      <AppHeader title={title} onMenuPress={openDrawer} showBack={!isHome} />
+      <AppHeader title={title} onMenuPress={openDrawer} showBack={showBack} />
 
       {/* Conteúdo da tela atual */}
       <View style={styles.content}>
         <OfflineBanner />
         <Slot />
       </View>
+
+      {/* Bottom Navigation Bar */}
+      <BottomNavBar />
 
       {/* Overlay escuro ao abrir o drawer */}
       {drawerOpen && (
@@ -123,8 +127,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: { width: 4, height: 0 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 16,
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 20,
   },
 })
